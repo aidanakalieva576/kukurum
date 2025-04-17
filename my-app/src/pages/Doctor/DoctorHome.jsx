@@ -6,7 +6,7 @@ import DoctorAppointments from "./DoctorAppointments";
 import DoctorProfile from "./DoctorProfile";
 import DoctorSidebar from "../../components/DoctorSidebar";
 import { DoctorContext } from "../../context/DoctorContext";
-import Chat from "./Chat";
+import Chat from "./Chat"
 
 const DoctorHome = () => {
   const { setDToken } = useContext(DoctorContext);
@@ -22,6 +22,7 @@ const DoctorHome = () => {
             <Route path="appointments" element={<DoctorAppointments />} />
             <Route path="profile" element={<DoctorProfile />} />
             <Route path="chat" element={<Chat/>} />
+            <Route path="" element={<DoctorDashboard />} /> 
           </Routes>
         </div>
       </div>
