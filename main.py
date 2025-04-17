@@ -390,18 +390,49 @@ async def get_my_appointments(user_id: int, db: AsyncSession = Depends(get_db)):
 
     return data, data_active
 
+
+
 @router.post("/cancel-appointment")
-async def cancelAppointments(request: CancelAppointmentRequest, db: AsyncSession = Depends(get_db)):
-    updateAppointment = update(Appointment).where(
-        Appointment.id == request.appointmentId
-    ).values(
-        cancelled = True
-    )
-    await db.execute(updateAppointment)
-    await db.commit()
-    return {"message": "Appointment canceled", "appointment_id": request.appointmentId}
+async def cancel_appointment(
+    request: CancelAppointmentRequest,  # ожидается: { appointmentId: int }
+    db: AsyncSession = Depends(get_db),
+):
+    appointment_id = request.get("appointmentId")
+    if not appointment_id:
+        raise HTTPException(status_code=400, detail="Appointment ID is required.")
 
+    # 1. Найдём активную запись
+    stmt = select(Appointment_active).where(Appointment_active.id == appointment_id)
+    result = await db.execute(stmt)
+    active_appointment = result.scalar_one_or_none()
 
+    if not active_appointment:
+        raise HTTPException(status_code=404, detail="Active appointment not found.")
+
+    try:
+        # 2. Скопируем данные в таблицу Appointment с cancelled=True
+        new_record = Appointment(
+            userId=active_appointment.userId,
+            docId=active_appointment.docId,
+            slotDate=active_appointment.slotDate,
+            slotTime=active_appointment.slotTime,
+            date=active_appointment.date,
+            payment=active_appointment.payment,
+            cancelled=True,
+            isCompleted=False,
+        )
+        db.add(new_record)
+
+        # 3. Удалим из активной таблицы
+        await db.delete(active_appointment)
+
+        await db.commit()
+
+        return {"message": "Appointment cancelled and moved to history."}
+    
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error cancelling appointment: {e}")
 
 
 @router.post("/create-payment")
@@ -422,7 +453,7 @@ async def fake_payment(
     db: AsyncSession = Depends(get_db),
 ):
     try:
-        stmt = select(Appointment).where(Appointment.id == request.appointmentId)
+        stmt = select(Appointment_active).where(Appointment_active.id == request.appointmentId)
         result = await db.execute(stmt)
         appointment = result.scalar_one_or_none()
 
