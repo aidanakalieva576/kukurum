@@ -5,15 +5,7 @@ from models import Admin, Doctor, create_table, drop_table
 from models import DATABASE_URL, engine, async_session_maker
 import cloudinary
 import cloudinary.uploader
-
-
-
-cloudinary.config(
-  cloud_name="djmrfjkki",
-  api_key="225718319113462",
-  api_secret="Z6_qtrSjkX0ntd8M8c8A-0WIQxc",
-  secure=True
-)
+from api import cloudinary
 
 res = cloudinary.uploader.upload("assets/doc1.png")
 print(res['secure_url']) 

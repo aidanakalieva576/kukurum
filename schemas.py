@@ -116,3 +116,34 @@ class AppointmentRequestDoc(BaseModel):
     slotDate: str  # формат "07_04_2025"
     slotTime: str
     email: Optional[str]
+
+
+class ChatRoomCreate(BaseModel):
+    user_id: int
+    doctor_id: int
+
+
+class MessageSent(BaseModel):
+    room_id: int
+    sender_id: int
+    sender_type: str
+    content: str
+    # date: datetime = Field(default_factory=datetime.now)
+    # is_read: bool = False
+
+class UserInfo(BaseModel):
+    id: int
+    name: str
+    email: str
+
+    class Config:
+        orm_mode = True
+
+
+class DoctorChatInfo(BaseModel):
+    id: int
+    email: str
+    image: str
+
+    class Config:
+        orm_mode = True

@@ -37,6 +37,7 @@ class User(Base):
     updated_at: Mapped[updated_at]
     appointments = relationship("Appointment", back_populates="user")
     appointments_active = relationship("Appointment_active", back_populates="user")
+    chats = relationship("ChatRoom", back_populates="user")
 
 
 class Doctor(Base):
@@ -61,6 +62,7 @@ class Doctor(Base):
     updated_at: Mapped[updated_at]
     appointments = relationship("Appointment", back_populates="doctor")
     appointments_active = relationship("Appointment_active", back_populates="doctor")
+    chats = relationship("ChatRoom", back_populates="doctor")
 
 
 class Appointment(Base):
@@ -114,6 +116,34 @@ class Admin(Base):
     id:Mapped[int_pk]
     email: Mapped[str_uniq]
     password: Mapped[str]
+
+class ChatRoom(Base):
+    __tablename__ = "chat_rooms"
+
+    id: Mapped[int_pk]
+    doctorId: Mapped[int] = mapped_column(ForeignKey("doctors.id"))
+    userId: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+
+    doctor: Mapped["Doctor"] = relationship("Doctor", foreign_keys=[doctorId])
+    user: Mapped["User"] = relationship("User", foreign_keys=[userId])
+    messages: Mapped[list["ChatMessage"]] = relationship("ChatMessage", back_populates="chat_room")
+
+
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+
+    id: Mapped[int_pk]
+    chat_room_id: Mapped[int] = mapped_column(ForeignKey("chat_rooms.id"))
+
+    sender_id: Mapped[int]
+    sender_type: Mapped[str]  # 'user' или 'doctor'
+    content: Mapped[str]
+    timestamp: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+
+    chat_room: Mapped["ChatRoom"] = relationship("ChatRoom", back_populates="messages")
+
 
 
 
