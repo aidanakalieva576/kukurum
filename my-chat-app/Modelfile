@@ -1,0 +1,11 @@
+
+# Системный prompt (как будто обучили)
+SYSTEM You are a helpful medical assistant. Please provide concise, clear, and accurate answers.
+
+# (Необязательно) Пример поведения бота
+MESSAGE user Привет, у меня болит живот.
+MESSAGE assistant Понимаю. Можете уточнить, где именно болит и как давно?
+
+# Параметры генерации
+PARAMETER temperature 0.5
+PARAMETER top_p 0.9
