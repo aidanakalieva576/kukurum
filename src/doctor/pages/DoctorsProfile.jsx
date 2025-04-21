@@ -1,27 +1,40 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { UnifiedContext } from '../../context/UnifiedContext';
 import axios from 'axios';
+import { toast } from 'react-toastify';
+import { assets } from "../../admin/assets.admin/assets_admin/assetsadmin";
+import CalendarModal from '../../doctor/components/CalendarModal'; 
+
 
 const DoctorProfile = () => {
   const { currency } = useContext(UnifiedContext);
   const [doctor, setDoctor] = useState(null);
   const [isEdit, setIsEdit] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [slotMode, setSlotMode] = useState("manual");
+
+  // Новые состояния для модального окна "Добавить запись"
+  const [isBookingModalOpen, setBookingModalOpen] = useState(false);
+  const [bookingEmail, setBookingEmail] = useState('');
+  const [bookingTime, setBookingTime] = useState('');
+  const [bookingDate, setBookingDate] = useState('');
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+
+  const fetchDoctorInfo = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.get("http://localhost:8000/doctor/me", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setDoctor(res.data);
+    } catch (error) {
+      toast.error("Ошибка при загрузке данных врача: " + (error.response?.data?.detail || error.message));
+    }
+  };
 
   useEffect(() => {
-    const fetchDoctorInfo = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const res = await axios.get("http://localhost:8000/doctor/me", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        setDoctor(res.data);
-      } catch (error) {
-        console.error("Ошибка при загрузке данных врача:", error);
-      }
-    };
-
     fetchDoctorInfo();
   }, []);
 
@@ -50,11 +63,40 @@ const DoctorProfile = () => {
           Authorization: `Bearer ${token}`,
         },
       });
+      await fetchDoctorInfo();
       setIsEdit(false);
     } catch (error) {
-      console.error("Ошибка при сохранении данных:", error);
+      toast.error("Ошибка при сохранении данных: " + (error.response?.data?.detail || error.message));
     }
   };
+
+  // Функция обработки добавления записи
+  const handleAddBooking = async () => {
+    try {
+      // Преобразуем дату из формата "YYYY-MM-DD" в "DD_MM_YYYY"
+      const formattedDate = bookingDate.split('-').reverse().join('_');
+      const token = localStorage.getItem("token");
+      const response = await axios.post("http://localhost:8000/doctor/book", {
+        docId: doctor.id,
+        slotDate: formattedDate,
+        slotTime: bookingTime,
+        email: bookingEmail || null // или задайте userId, если требуется
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      toast.success("Запись успешно добавлена!");
+      console.log("Booking successful:", response.data);
+    } catch (err) {
+      toast.error("Ошибка при бронировании записи: " + (err.response?.data?.detail || err.message));
+    }
+    setBookingModalOpen(false);
+    setBookingEmail('');
+    setBookingTime('');
+    setBookingDate('');
+  };
+
 
   if (!doctor) return <p className="m-5 text-gray-600">Загрузка профиля...</p>;
 
@@ -172,34 +214,202 @@ const DoctorProfile = () => {
             />
             <label>Available</label>
           </div>
+          <img
+            src={assets.calendar}
+            alt="calendar"
+            onClick={() => setIsCalendarOpen(true)}
+            className="cursor-pointer w-5 h-5 mt-4"
+          />
+        </div>
 
-          {/* Buttons */}
-          {isEdit ? (
-            <div className='flex gap-2 mt-5'>
-              <button
-                onClick={handleSave}
-                className='px-4 py-1 bg-primary text-white text-sm rounded-full hover:bg-primary/90 transition-all'
-              >
-                Save
-              </button>
-              <button
-                onClick={() => setIsEdit(false)}
-                className='px-4 py-1 border border-gray-400 text-sm rounded-full'
-              >
-                Cancel
-              </button>
-            </div>
-          ) : (
+        {/* Buttons */}
+        {isEdit ? (
+          <div className='flex gap-2 mt-5'>
+            <button
+              onClick={handleSave}
+              className='px-4 py-1 bg-primary text-white text-sm rounded-full hover:bg-primary/90 transition-all'
+            >
+              Save
+            </button>
+            <button
+              onClick={() => setIsEdit(false)}
+              className='px-4 py-1 border border-gray-400 text-sm rounded-full'
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <div className='flex gap-2 mt-5'>
             <button
               onClick={() => setIsEdit(true)}
-              className='px-4 py-1 border border-primary text-sm rounded-full mt-5 hover:bg-primary hover:text-white transition-all'
+              className='px-4 py-1 border border-primary text-sm rounded-full hover:bg-primary hover:text-white transition-all'
             >
               Edit
             </button>
-          )}
-        </div>
+            <button
+              onClick={() => setIsSettingsOpen(true)}
+              className='px-4 py-1 border border-blue-400 text-sm text-blue-600 rounded-full hover:bg-blue-50 transition-all'
+            >
+              Настроить
+            </button>
+            {doctor.settings && (
+              <button
+                onClick={() => setBookingModalOpen(true)} // Изменили на открытие модального окна
+                className='px-4 py-1 bg-primary text-white text-sm rounded-full hover:bg-primary/90 transition-all'
+              >
+                Добавить запись
+              </button>
+            )}
+          </div>
+        )}
       </div>
+      {isSettingsOpen && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-[90%] max-w-md shadow-lg relative">
+            <h2 className="text-lg font-semibold mb-4">Настройка слотов</h2>
+
+            <div className="flex flex-col gap-3">
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="slotMode"
+                  value="manual"
+                  checked={slotMode === "manual"}
+                  onChange={() => setSlotMode("manual")}
+                />
+                Ручное создание слотов
+              </label>
+
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="slotMode"
+                  value="auto"
+                  checked={slotMode === "auto"}
+                  onChange={() => setSlotMode("auto")}
+                />
+                Автоматическая генерация слотов
+              </label>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                onClick={() => setIsSettingsOpen(false)}
+                className="px-4 py-1 border rounded-full text-sm"
+              >
+                Отмена
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    // Если слот установлен в авто-режим, то вызываем удаление
+                    if (slotMode === "auto") {
+                      const token = localStorage.getItem("token");
+                      console.log("Deleting slots for doctor ID:", doctor.id);
+                      await axios.delete(`http://localhost:8000/doctor/book?docId=${doctor.id}`, {
+                        headers: {
+                          Authorization: `Bearer ${token}`,
+                        },
+                      });
+
+                      toast.success("Слоты успешно удалены.");
+                    }
+
+                    // Сохраняем настройки
+                    const token = localStorage.getItem("token");
+                    await axios.put(
+                      "http://localhost:8000/doctor/update/me",
+                      {
+                        ...doctor,
+                        settings: slotMode === "manual",
+                      },
+                      {
+                        headers: {
+                          Authorization: `Bearer ${token}`,
+                        },
+                      }
+                    );
+
+                    await fetchDoctorInfo();  // Обновляем информацию о враче
+                    setIsSettingsOpen(false);  // Закрываем окно настроек
+                  } catch (err) {
+                    toast.error("Ошибка при сохранении настроек: " + (err.response?.data?.detail || err.message));
+                  }
+                }}
+                className="px-4 py-1 bg-primary text-white rounded-full text-sm"
+              >
+                Сохранить
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {isCalendarOpen && doctor && (
+  <CalendarModal
+    doctorId={doctor.id}
+    onClose={() => setIsCalendarOpen(false)}
+    onDateSelect={(selectedDate) => {
+      console.log("Выбрана дата:", selectedDate.toISOString().split("T")[0]);
+      setBookingDate(selectedDate.toISOString().split("T")[0]);
+    }}
+  />
+)}
+      
+      {isBookingModalOpen && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-[90%] max-w-md shadow-lg relative">
+            <h2 className="text-lg font-semibold mb-4">Добавить запись</h2>
+            <div className="flex flex-col gap-3">
+              <label className="flex flex-col gap-1">
+                Почта клиента:
+                <input
+                  type="email"
+                  value={bookingEmail}
+                  onChange={e => setBookingEmail(e.target.value)}
+                  className="border rounded px-2 py-1"
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                Время записи:
+                <input
+                  type="time"
+                  value={bookingTime}
+                  onChange={e => setBookingTime(e.target.value)}
+                  className="border rounded px-2 py-1"
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                Дата записи:
+                <input
+                  type="date"
+                  value={bookingDate}
+                  onChange={e => setBookingDate(e.target.value)}
+                  className="border rounded px-2 py-1"
+                />
+              </label>
+            </div>
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                onClick={() => setBookingModalOpen(false)}
+                className="px-4 py-1 border rounded-full text-sm"
+              >
+                Отмена
+              </button>
+              <button
+                onClick={handleAddBooking}
+                className="px-4 py-1 bg-primary text-white rounded-full text-sm"
+              >
+                Добавить
+              </button>
+            </div>
+          </div>
+          
+
+        </div>
+      )}
     </div>
+  
+
   );
 };
 

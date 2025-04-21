@@ -21,15 +21,12 @@ const Appointment = () => {
 
   const navigate = useNavigate();
 
-  // Найти врача по ID
   useEffect(() => {
     if (!docId || !doctors) return;
-    const doctorIdNumber = Number(docId.replace('doc', ''));
     const doc = doctors.find((d) => d.id === doctorIdNumber);
     if (doc) setDocInfo(doc);
-  }, [docId, doctors]);
+  }, [docId, doctors, doctorIdNumber]);
 
-  // Сгенерировать слоты по времени (на 7 дней вперёд)
   useEffect(() => {
     if (!docInfo) return;
 
@@ -45,18 +42,14 @@ const Appointment = () => {
 
       if (i === 0) {
         const now = new Date();
-        console.log(now)
 
-        // Начнем не раньше 10:00
         let startHour = now.getHours();
         let startMinute = now.getMinutes() > 30 ? 0 : 30;
 
-        // если сейчас раньше 10:00 — начнем с 10:00
         if (startHour < 10) {
           startHour = 10;
           startMinute = 0;
         } else {
-          // если уже после — начнем со следующего ближайшего слота
           if (startMinute === 0) {
             startMinute = 30;
           } else {
@@ -91,13 +84,8 @@ const Appointment = () => {
     setDocSlots(slots);
   }, [docInfo]);
 
-  // Устанавливаем доступные слоты по выбранному дню
   useEffect(() => {
-    if (
-      !docSlots.length ||
-      !docSlots[slotIndex] ||
-      docSlots[slotIndex].length === 0
-    ) {
+    if (!docSlots.length || !docSlots[slotIndex]?.length) {
       setAvailableTimes([]);
       return;
     }
@@ -107,10 +95,8 @@ const Appointment = () => {
     const month = selectedDate.getMonth() + 1;
     const year = selectedDate.getFullYear();
     const slotDate = `${day}_${month}_${year}`;
-    console.log(slotDate)
 
     const fetchAvailableSlots = async () => {
-
       try {
         const res = await axios.get(`${backendUrl}/users_api/available-slots/`, {
           params: {
@@ -118,7 +104,6 @@ const Appointment = () => {
             slotDate,
           },
         });
-        console.log('Слоты с сервера:', res.data.availableSlots);
         setAvailableTimes(res.data.availableSlots);
       } catch (error) {
         console.error('Ошибка при загрузке доступных слотов:', error);
@@ -126,13 +111,9 @@ const Appointment = () => {
       }
     };
 
-
     fetchAvailableSlots();
+  }, [docSlots, slotIndex, backendUrl, doctorIdNumber]);
 
-  }, [docSlots, slotIndex]);
-
-
-  // Устанавливаем список дней
   useEffect(() => {
     if (!docInfo) return;
 
@@ -166,71 +147,65 @@ const Appointment = () => {
       return;
     }
 
-    if (!docSlots[slotIndex] || !docSlots[slotIndex][0]) {
-      toast.error("Невозможно определить дату записи. Пожалуйста, выберите слот.");
+    const dateObj = docSlots[slotIndex]?.[0]?.datetime;
+    if (!dateObj) {
+      toast.error("Невозможно определить дату записи.");
       return;
     }
 
+    const day = dateObj.getDate();
+    const month = dateObj.getMonth() + 1;
+    const year = dateObj.getFullYear();
+    const paddedDay = day < 10 ? `0${day}` : day;
+    const paddedMonth = month < 10 ? `0${month}` : month;
+    const slotDate = `${paddedDay}_${paddedMonth}_${year}`;
+
     try {
-      const date = docSlots[slotIndex][0].datetime;
-      const docID = doctorIdNumber
-
-      const day = date.getDate();
-      const month = date.getMonth() + 1;
-      const year = date.getFullYear();
-      const slotDate = `${day}_${month}_${year}`;
-      console.log('ASASASAASSASASSSSS', slotDate)
-
       const res = await axios.post(
         `${backendUrl}/users_api/book/`,
-        { docId: docID, slotDate, slotTime }, // Тело запроса
+        { docId: doctorIdNumber, slotDate, slotTime },
         {
           headers: {
-            'Authorization': `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
-          }
+          },
         }
       );
 
       const data = res.data;
 
-      if (data && data.message) {
+      if (data?.message) {
         toast.success(data.message);
         getDoctorsData();
         navigate('/user/my-appointments');
       } else {
         toast.error('Что-то пошло не так. Попробуйте снова.');
       }
-
     } catch (error) {
-      console.log(error);
-      toast.error("Войдите чтобы сделать запись");
+      console.error(error);
+      toast.error("Ошибка при попытке записи. Попробуйте позже.");
     }
   };
-
-
 
   return (
     docInfo && (
       <div>
         {/* Врач */}
         <div className="flex flex-col sm:flex-row gap-4">
-          <div>
-            <img className="bg-primary w-full sm:w-60 rounded-lg" src={docInfo.image} alt="" />
-          </div>
+          <img className="bg-primary w-full sm:w-60 rounded-lg" src={docInfo.image} alt="" />
 
           <div className="flex-1 border border-gray-400 rounded-lg p-8 py-7 bg-white mx-2 sm:ml-6">
             <p className="flex items-center gap-2 text-2xl font-medium text-gray-900">
               {docInfo.name}
-              <img className="w-5" src={assets.verified_icon} alt="" />
+              <img className="w-5" src={assets.verified_icon} alt="verified" />
             </p>
             <div className="flex items-center gap-2 text-sm mt-1 text-gray-600">
               <p>{docInfo.degree} - {docInfo.speciality}</p>
-              <button className="py-0.5 px-2 border text-xs rounded-full">{docInfo.experience}</button>
+              <span className="py-0.5 px-2 border text-xs rounded-full">{docInfo.experience}</span>
             </div>
             <div>
               <p className="flex items-center gap-1 text-sm font-medium text-gray-900 mt-3">
-                Подробнее <img src={assets.info_icon} alt="" />
+                Подробнее <img src={assets.info_icon} alt="info" />
               </p>
               <p className="text-sm text-gray-500 max-w-[700px] mt-1">{docInfo.about}</p>
             </div>
@@ -242,8 +217,6 @@ const Appointment = () => {
 
         {/* Слоты */}
         <div className="sm:ml-72 sm:pl-4 mt-4 font-medium text-gray-700">
-
-
           {docInfo.available ? (
             <>
               <p>Время для записи:</p>
@@ -251,7 +224,10 @@ const Appointment = () => {
                 {days.map((item, index) => (
                   <div
                     key={index}
-                    onClick={() => setSlotIndex(index)}
+                    onClick={() => {
+                      setSlotIndex(index);
+                      setSlotTime('');
+                    }}
                     className={`text-center py-6 min-w-16 rounded-full cursor-pointer ${slotIndex === index ? 'bg-primary text-white' : 'border border-gray-200'}`}
                   >
                     <p>{item.displayDay}</p>
@@ -266,32 +242,36 @@ const Appointment = () => {
                     <p
                       key={index}
                       onClick={() => setSlotTime(time)}
-                      className={`text-sm font-light px-5 py-2 rounded-full cursor-pointer flex-shrink-0 ${time === slotTime
-                          ? 'bg-primary text-white'
-                          : 'text-gray-400 border border-gray-300'
-                        }`}
+                      className={`text-sm font-light px-5 py-2 rounded-full cursor-pointer flex-shrink-0 ${time === slotTime ? 'bg-primary text-white' : 'text-gray-400 border border-gray-300'}`}
                     >
                       {time.toLowerCase()}
                     </p>
                   ))}
                 </div>
               </div>
-              <button
-                onClick={bookAppointment}
-                className="bg-primary text-white text-sm font-light px-14 py-3 rounded-full my-6"
-              >
-                Записаться
-              </button>
+
+              {availableTimes.length > 0 && (
+                <button
+                  onClick={bookAppointment}
+                  className="bg-primary text-white text-sm font-light px-14 py-3 rounded-full my-6"
+                >
+                  Записаться
+                </button>
+              )}
+
+              {docInfo.settings && (
+                <p className="text-xs text-orange-500 mt-2">
+                  У этого врача включён ручной режим записи. Вы можете выбрать только предложенные свободные слоты.
+                </p>
+              )}
 
               {availableTimes.length === 0 && (
                 <p className="text-sm text-gray-500 mt-2">Все записи заняты</p>
               )}
             </>
           ) : (
-            <p className="text-xl text-gray-500 ">Слоты на запись недоступны</p>
+            <p className="text-xl text-gray-500">Слоты на запись недоступны</p>
           )}
-
-
         </div>
 
         <RelatedDoctors docId={docId} speciality={docInfo?.speciality} />

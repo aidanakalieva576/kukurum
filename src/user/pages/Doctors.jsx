@@ -1,27 +1,70 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { UnifiedContext } from '../../context/UnifiedContext'
+import axios from 'axios'
 
 const Doctors = () => {
-
   const { speciality } = useParams()
   const [filterDoc, setFilterDoc] = useState([])
+  const [selectedDate, setSelectedDate] = useState('')
   const navigate = useNavigate()
-  const { doctors } = useContext(UnifiedContext)
+  const { doctors, backendUrl } = useContext(UnifiedContext)
 
-  const applyFilter = () => {
+  const applyFilter = async () => {
+    let filtered = doctors
+
+    // Фильтрация по специальности
     if (speciality) {
-      setFilterDoc(doctors.filter(doc => doc.speciality === speciality))
+      filtered = filtered.filter(doc => doc.speciality === speciality)
+    }
+
+    // Фильтрация по дате и доступности
+    if (selectedDate) {
+      const formattedDate = new Date(selectedDate)
+      const day = formattedDate.getDate().toString().padStart(2, '0')
+      const month = (formattedDate.getMonth() + 1).toString().padStart(2, '0')
+      const slotDate = `${formattedDate.getFullYear()}-${month}-${day}`
+
+      const availableDoctors = filtered.filter(doc => doc.available)
+
+      const doctorsWithSlots = []
+      for (const doc of availableDoctors) {
+        try {
+          const res = await axios.get(`${backendUrl}/users_api/available-slots/`, {
+            params: { docId: doc.id, slotDate }
+          })
+          const slots = res.data?.availableSlots || []
+          if (slots.length > 0) {
+            doctorsWithSlots.push(doc)
+          }
+        } catch (error) {
+          console.error(`Ошибка при получении слотов для врача ${doc.id}`, error)
+        }
+      }
+
+      setFilterDoc(doctorsWithSlots)
     } else {
-      setFilterDoc(doctors)
+      // Если дата не выбрана — просто по доступности
+      setFilterDoc(filtered.filter(doc => doc))
     }
   }
+
   useEffect(() => {
     applyFilter()
-  }, [doctors, speciality])
+  }, [doctors, speciality, selectedDate])
+
   return (
     <div>
       <p className='text-gray-600'>Browse through the doctors specialist</p>
+      {/* Новый элемент для выбора даты */}
+      <div className="my-5">
+        <input
+          type="date"
+          value={selectedDate}
+          onChange={(e) => setSelectedDate(e.target.value)}
+          className="border border-gray-300 rounded p-2"
+        />
+      </div>
       <div className='flex flex-col sm:flex-row items-start gap-5 mt-5'>
         <div className=' flex flex-col gap-4 text-sm text-gray-600'>
           <p onClick={() => speciality === 'Главный врач' ? navigate(`/doctors`) : navigate('/doctors/Главный врач')} className={`w-[94vw] sm:w-auto pl-3 py-1.5 pr-16 border border-gray-300 rounded transition-all cursor-pointer ${speciality === "Главный врач" ? "bg-blue-100 text-black" : ""}`} >Главный врач</p>
@@ -55,12 +98,10 @@ const Doctors = () => {
                 </div>
               </div>
             ))
-
           }
         </div>
 
       </div>
-
     </div>
   )
 }

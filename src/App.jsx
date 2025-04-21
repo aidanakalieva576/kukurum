@@ -5,7 +5,7 @@ import MyProfile from './user/pages/MyProfile'
 import MyAppointments from './user/pages/MyAppointments'
 import Appointment from './user/pages/Appointment'
 import Navbar from './user/components/Navbar'
-import Contact from './user/pages/Contact'
+// import Contact from './user/pages/Contact'
 import About from './user/pages/About'
 import Doctors from './user/pages/Doctors'
 import Footer from './user/components/Footer'
@@ -22,7 +22,7 @@ const App = () => {
   const role = localStorage.getItem('role')
 
   // Условие показа Navbar и Footer только для role "user" и страницы логина
-  const showLayout = role === 'user' || location.pathname === '/login'
+  const showLayout = role === 'user' || !role
 
   return (
     <div className='mx-4 sm:mx-[10%]'>
@@ -34,7 +34,6 @@ const App = () => {
       <Route path ='doctors' element ={<Doctors />} />
       <Route path ='doctors/:speciality' element ={<Doctors />} />
       <Route path ='about' element ={<About />} />
-      <Route path ='contact' element ={<Contact />} />
       <Route path ='appointment/:docId' element ={<Appointment />} />
 
         <Route

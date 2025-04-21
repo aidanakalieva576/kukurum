@@ -10,7 +10,10 @@ import CheckoutForm from '../components/CheckoutForm';
 
 const MyAppointments = () => {
   const { token, backendUrl, user } = useContext(UnifiedContext);
-  const [appointments, setAppointments] = useState([]);
+  const [appointments, setAppointments] = useState({
+    history: [],
+    active: [],
+  });
   const stripePromise = loadStripe('pk_test_51RCCFKCrNkMgRyYRIYGhZdryS3RVKWoO5EmQnRz0tUD3gz0FPns69u9vTpnrAH1toUFfwyfpB4sbHSYRsxDFL2eA009SNW8p4o');
 
 
@@ -23,7 +26,13 @@ const MyAppointments = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      setAppointments(res.data);
+
+      const { historyAppointments, activeAppointments } = res.data;
+
+      setAppointments({
+        history: historyAppointments,
+        active: activeAppointments,
+      });
     } catch (err) {
       console.error(err);
       toast.error('Ошибка при загрузке записей');
@@ -35,7 +44,7 @@ const MyAppointments = () => {
   useEffect(() => {
     console.log("user", user);
     console.log("token", token);
-  
+
     if (user?.id && token) {
       fetchAppointments();
       console.log("kdsmmklvmdkld");
@@ -44,11 +53,11 @@ const MyAppointments = () => {
 
   const cancelAppointment = async (appointmentId) => {
     try {
-      console.log("Отменяем запись:", appointmentId);  // debug
+      console.log("Отменяем запись:", appointmentId);
 
       const { data } = await axios.post(
         `${backendUrl}/users_api/cancel-appointment`,
-        { appointmentId },
+        { appointmentId }, // <-- отправляем в теле запроса
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -56,11 +65,11 @@ const MyAppointments = () => {
         }
       );
 
-      console.log("Ответ от бэка:", data);  // debug
+      console.log("Ответ от бэка:", data);
 
       if (data?.message) {
-        toast.success('Запись успешна отменена');
-        fetchAppointments();
+        toast.success('Запись успешно отменена');
+        fetchAppointments(); // <-- обновляем список записей
       } else {
         toast.error('Ошибка при отмене');
       }
@@ -70,14 +79,9 @@ const MyAppointments = () => {
     }
   };
 
-  const blizhaishie = appointments.filter((a) => {
-    return !a.cancelled && !a.isCompleted;
-  });
-  
-  const istoria = appointments.filter((a) => {
-    return a.cancelled || a.isCompleted;
-  });
-  
+  const blizhaishie = appointments.active;
+  const istoria = appointments.history;
+
   console.log("Appointments:", appointments);
 
 
@@ -171,7 +175,7 @@ const MyAppointments = () => {
                 </p>
               </div>
 
-              <div className='flex flex-col gap-2 flex flex-col gap-2 justify-center items-center'>
+              <div className='flex flex-col gap-2 justify-center items-center'>
                 {!item.payment ? (
                   <button
                     onClick={() => handlePay(item.appointmentId)}
@@ -180,13 +184,17 @@ const MyAppointments = () => {
                     Оплатить онлайн
                   </button>
                 ) : (
-                  <p className='text-xl text-green-600 text-center sm:min-w-48 py-2 rounded justify-center items-center' >
+                  <p className='text-xl text-green-600 text-center sm:min-w-48 py-2 rounded justify-center items-center'>
                     Оплачено
                   </p>
                 )}
 
-                {!item.cancelled && !item.payment && (
-                  <button onClick={() => cancelAppointment(item.appointmentId)} className='text-sm text-stone-500 text-center sm:min-w-48 py-2 border rounded hover:bg-red-500 hover:text-white transition-all duration-300'>
+                {/* Показывать кнопку "Отменить" только если не оплачено */}
+                {!item.payment && (
+                  <button
+                    onClick={() => cancelAppointment(item.appointmentId)}
+                    className="text-sm text-stone-500 text-center sm:min-w-48 py-2 border rounded hover:bg-red-500 hover:text-white transition-all duration-300 justify-end"
+                  >
                     Отменить
                   </button>
                 )}
@@ -207,7 +215,7 @@ const MyAppointments = () => {
           const readableDate = `${dateParts[0]}.${dateParts[1]}.${dateParts[2]}`;
 
           return (
-            <div className='grid grid-cols-[1fr_2fr] gap-4 sm:flex sm:gap-6 py-2 border-b opacity-60' key={index}>
+            <div className='grid grid-cols-[1fr_2fr] gap-4 sm:flex sm:gap-6 py-2 border-b opacity-60' key={item.appointmentId}>
               <div>
                 <img className='w-32 bg-indigo-50' src={item.doctor.image} alt="" />
               </div>

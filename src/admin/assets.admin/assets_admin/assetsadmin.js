@@ -11,8 +11,9 @@ import tick_icon from './tick_icon.svg'
 import appointments_icon from './appointments_icon.svg'
 import earning_icon from './earning_icon.svg'
 import patients_icon from './patients_icon.svg'
-import check from 'C:/Users/Admin/Desktop/курсовая/course/src/admin/assets.admin/assets_admin/check.svg'
-import pause_icon from "C:/Users/Admin/Desktop/курсовая/course/src/admin/assets.admin/assets_admin/pause_icon.svg"
+import check from 'C:/Users/Admin/OneDrive/Desktop/coursework/course/src/admin/assets.admin/assets_admin/check.svg'
+import pause_icon from "C:/Users/Admin/OneDrive/Desktop/coursework/course/src/admin/assets.admin/assets_admin/pause_icon.svg"
+import calendar from "C:/Users/Admin/OneDrive/Desktop/coursework/course/src/admin/assets.admin/assets_admin/calendar.svg"
 
 export const assets = {
     add_icon,
@@ -29,5 +30,6 @@ export const assets = {
     appointments_icon,
     earning_icon,
     check,
-    pause_icon
+    pause_icon,
+    calendar
 }

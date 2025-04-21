@@ -56,7 +56,7 @@ export const appointments =
   }
 ]
 
-import tralalelo from 'C:/Users/Admin/Desktop/курсовая/course/src/admin/assets.admin/baka.jpg'
+import tralalelo from 'C:/Users/Admin/OneDrive/Desktop/coursework/course/src/admin/assets.admin/baka.jpg'
  
  export const docappointments =
  [

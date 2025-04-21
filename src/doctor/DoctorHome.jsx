@@ -7,7 +7,8 @@ import DoctorAppointments from './pages/DoctorAppointments';
 import DoctorProfile from './pages/DoctorsProfile';
 import DoctorSidebar from './components/DoctorSidebar';
 import { UnifiedContext } from '../context/UnifiedContext';
-import Chat from './pages/DoctorChat';
+import ChatList from './components/ChatList';
+import DoctorChat from './pages/DoctorChat';
 
 const DoctorPage = () => {
   return (
@@ -20,7 +21,8 @@ const DoctorPage = () => {
             <Route path="dashboard" element={<DashboardDoctor />} />
             <Route path="appointments" element={<DoctorAppointments />} />
             <Route path="profile" element={<DoctorProfile />} />
-            <Route path="chat" element={<Chat/>} />
+            <Route path="/chat" element={<ChatList />} />
+            <Route path="/chat/:id" element={<DoctorChat />} />
           </Routes>
         </div>
       </div>
