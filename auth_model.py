@@ -4,14 +4,14 @@ from fastapi import Depends, HTTPException, Request, logger, status
 import jwt
 from sqlalchemy import select
 
-from models import Admin, Doctor, User
+from tables.models import Admin, Doctor, User
 import asyncio
 from passlib.context import CryptContext
 import os
 from sqlalchemy.ext.asyncio import AsyncSession
 import logging
-from models import  async_session_maker
-from api import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
+from tables.models import  async_session_maker
+from gitignire.api import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 
 
 

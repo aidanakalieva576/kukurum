@@ -36,7 +36,7 @@ from auth_model import (
 )
 from pydantic import BaseModel
 from sqlalchemy.future import select
-from models import (
+from tables.models import (
     Appointment,
     Appointment_active,
     ChatMessage,
@@ -47,8 +47,8 @@ from models import (
     engine,
 )
 from fastapi.middleware.cors import CORSMiddleware
-import models
-from schemas import (
+import tables.models as models
+from routes.schemas import (
     AddDoctorSchema,
     AppointmentCreate,
     AppointmentRequest,
@@ -73,7 +73,9 @@ import cloudinary
 import cloudinary.uploader
 from sqlalchemy.orm import Session
 import io
-from api import cloudinary, stripe
+from gitignire.api import cloudinary, stripe
+from routes.ollama import ai
+from routes.adminroute import adminroute
 
 
 app = FastAPI()
@@ -95,10 +97,7 @@ router = APIRouter(
     prefix="/users_api",
     tags=["Users"],
 )
-adminroute = APIRouter(
-    prefix="/admin",
-    tags=["Admin"],
-)
+
 docroute = APIRouter(
     prefix="/doctor",
     tags=["Doctor"],
@@ -549,109 +548,9 @@ from sqlalchemy.future import select
 from fastapi import Path
 
 
-@adminroute.put("/update-doctor-availability/{doctor_id}")
-async def update_doctor_availability(
-    request: DoctorAvailability, db: AsyncSession = Depends(get_db)
-):
-    try:
-        # Получаем текущего доктора
-        result = await db.execute(select(Doctor).where(Doctor.id == request.docId))
-        doctor = result.scalar_one_or_none()
-
-        if not doctor:
-            raise HTTPException(status_code=404, detail="Doctor not found")
-
-        # Инвертируем значение available
-        new_value = not doctor.available
-
-        # Обновляем
-        stmt = (
-            update(Doctor).where(Doctor.id == request.docId).values(available=new_value)
-        )
-        await db.execute(stmt)
-        await db.commit()
-
-        return {"docId": request.docId, "available": new_value}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 
-@adminroute.get("/getting_appointments")
-async def get_all_appointments(db: AsyncSession = Depends(get_db)):
-    try:
-        stmt = (
-            select(
-                Appointment.id,
-                User.name.label("user_name"),
-                User.image.label("user_image"),
-                User.dob,
-                Appointment.slotTime,
-                Appointment.slotDate,
-                Doctor.name.label("doctor_name"),
-                Doctor.image.label("doctor_image"),
-                Doctor.fees,
-                Appointment.cancelled,
-                Appointment.payment,
-                Appointment.isCompleted,
-            )
-            .join(User, Appointment.userId == User.id)
-            .join(Doctor, Appointment.docId == Doctor.id)
-        )
 
-        result = await db.execute(stmt)
-        appointments = result.all()
-
-        # Разделим на две категории
-        active_appointments = []
-        history_appointments = []
-
-        for appt in appointments:
-            (
-                id,
-                user_name,
-                user_image,
-                dob,
-                slotTime,
-                slotDate,
-                doctor_name,
-                doctor_image,
-                fees,
-                cancelled,
-                payment,
-                isCompleted,
-            ) = appt
-
-            appt_data = {
-                "id": id,
-                "user_name": user_name,
-                "user_image": user_image,
-                "user_dob": dob,
-                "date": slotDate,
-                "time": slotTime,
-                "doctor_name": doctor_name,
-                "doctor_image": doctor_image,
-                "fees": fees,
-                "cancelled": cancelled,
-                "payment": payment,
-                "isCompleted": isCompleted,
-            }
-
-            # Проверяем, относится ли запись к истории или активной
-            if cancelled or isCompleted:
-                history_appointments.append(appt_data)
-            else:
-                active_appointments.append(appt_data)
-
-        # Возвращаем результат в формате с двумя категориями
-        response = {
-            "active_appointments": active_appointments,
-            "history_appointments": history_appointments,
-        }
-
-        return response
-
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
 
 
 @app.patch("/cancel_appointment/{appointment_id}")
@@ -685,61 +584,7 @@ async def cancel_appointment(appointment_id: int, db: AsyncSession = Depends(get
     return {"message": "Appointment cancelled", "appointmentId": new_appointment.id}
 
 
-@adminroute.post("/add_doctor")
-async def add_doctor(
-    name: str = Form(...),
-    email: str = Form(...),
-    password: str = Form(...),
-    experience: str = Form(...),
-    fees: int = Form(...),
-    speciality: str = Form(...),
-    degree: str = Form(...),
-    address: str = Form("{}"),
-    about: str = Form(...),
-    image: UploadFile = File(...),
-    db: AsyncSession = Depends(get_db),
-):
-    try:
-        address_dict = json.loads(address)
-    except json.JSONDecodeError:
-        raise HTTPException(status_code=400, detail="Invalid JSON format for address")
 
-    if not image.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="Файл должен быть изображением")
-
-    try:
-        contents = await image.read()
-        uploaded = cloudinary.uploader.upload(io.BytesIO(contents))
-        image_url = uploaded.get("secure_url")
-    except Exception as e:
-        print("Ошибка Cloudinary:", e)
-        traceback.print_exc()
-        raise HTTPException(
-            status_code=500, detail=f"Ошибка при загрузке изображения: {e}"
-        )
-
-    try:
-        doctor = Doctor(
-            name=name,
-            email=email,
-            password=password,
-            experience=experience,
-            fees=fees,
-            speciality=speciality,
-            degree=degree,
-            address=address_dict,
-            about=about,
-            image=image_url,
-        )
-
-        db.add(doctor)
-        await db.commit()
-        return {"message": "Doctor added successfully"}
-    except IntegrityError:
-        await db.rollback()
-        raise HTTPException(
-            status_code=400, detail="Doctor with this email already exists"
-        )
 
 
 @docroute.get("/get_doctor_appointments")
@@ -1081,26 +926,33 @@ async def send_message(request: MessageSent, db: AsyncSession = Depends(get_db))
     # 🔥 WebSocket уведомление
     # Импортируйте manager
     await manager.broadcast(
-        room_id=message.chat_room_id,
-        message=json.dumps(
-            {
-                "id": message.id,
-                "sender_id": message.sender_id,
-                "sender_type": message.sender_type,
-                "content": message.content,
-            }
-        ),
-    )
-
-    return JSONResponse(
-        status_code=201,
-        content={
+    room_id=message.chat_room_id,
+    message=json.dumps(
+        {
             "id": message.id,
             "sender_id": message.sender_id,
             "sender_type": message.sender_type,
             "content": message.content,
-        },
+            "timestamp": message.timestamp.isoformat(),  # ✅ добавляем timestamp
+        }
+    ),
+)
+    if not request.content.strip():
+        raise HTTPException(status_code=400, detail="Пустое сообщение")
+
+
+    return JSONResponse(
+    status_code=201,
+    content={
+        "id": message.id,
+        "sender_id": message.sender_id,
+        "sender_type": message.sender_type,
+        "content": message.content,
+        "timestamp": message.timestamp.isoformat(),
+    },
+
     )
+
 
 
 @chat.get("/chat_messages/{room_id}")
@@ -1202,7 +1054,12 @@ async def get_doctors_for_chat(
     return [{"id": doc.id, "email": doc.email, "image": doc.image} for doc in doctors]
 
 
+
+
+
 app.include_router(router)
 app.include_router(adminroute)
 app.include_router(docroute)
 app.include_router(chat)
+app.include_router(ai)
+
