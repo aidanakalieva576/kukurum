@@ -4,9 +4,12 @@ import { NavLink } from "react-router-dom";
 import home_icon from "C:/Users/Admin/OneDrive/Desktop/coursework/course/src/admin/assets.admin/assets_admin/home_icon.svg"
 import appointmen_icon from "C:/Users/Admin/OneDrive/Desktop/coursework/course/src/admin/assets.admin/assets_admin/appointment_icon.svg"
 import people_icon from "C:/Users/Admin/OneDrive/Desktop/coursework/course/src/admin/assets.admin/assets_admin/people_icon.svg";
+import translations from "../../utils";
 
 const DoctorSidebar = () => {
   const { token, setToken } = useContext(UnifiedContext);
+  const { language } = useContext(UnifiedContext);
+  const t = translations[language];
 
   React.useEffect(() => {
     localStorage.setItem("token", token);
@@ -24,7 +27,7 @@ const DoctorSidebar = () => {
           }
         >
           <img src={home_icon} alt="Dashboard" className="w-5 h-5" />
-          <span>Dashboard</span>
+          <span>{t.Dashboard}</span>
         </NavLink>
         <NavLink
           to="/doctor/appointments"
@@ -34,7 +37,7 @@ const DoctorSidebar = () => {
           }
         >
           <img src={appointmen_icon} alt="" />
-          <span>Appointments</span>
+          <span>{t.Appointments}</span>
         </NavLink>
         <NavLink
           to="/doctor/profile"
@@ -44,7 +47,7 @@ const DoctorSidebar = () => {
           }
         >
           <img src={people_icon} alt="" />
-          <span>Doctor Profile</span>
+          <span>{t.DocProfile}</span>
         </NavLink>
         <NavLink
           to="/doctor/chat"
@@ -54,7 +57,7 @@ const DoctorSidebar = () => {
           }
         >
           <img src={home_icon} alt="Chat" className="w-5 h-5" />
-          <span>Chat</span>
+          <span>{t.Chat}</span>
         </NavLink>
       </ul>
     </div>

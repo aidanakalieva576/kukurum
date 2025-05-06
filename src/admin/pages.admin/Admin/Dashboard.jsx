@@ -2,10 +2,13 @@ import React, { useContext } from 'react';
 import { assets } from '../../assets.admin/assets_admin/assetsadmin.js';
 import { useState } from 'react';
 import { useEffect } from 'react';
+import translations from '../../../utils.jsx';
 
 import { UnifiedContext } from '../../../context/UnifiedContext.jsx';
 
 const Dashboard = () => {
+  const { language } = useContext(UnifiedContext);
+  const t = translations[language];
   const { slotDateFormat } = useContext(UnifiedContext);
   const [appointments, setAppointments] = useState([]);
 
@@ -34,7 +37,7 @@ const Dashboard = () => {
           <img className='w-14' src={assets.doctor_icon} alt="" />
           <div>
             <p className='text-xl font-semibold text-gray-600'>{appointments.length}</p>
-            <p className='text-gray-400'>Докторы</p>
+            <p className='text-gray-400'>{t.doctors}</p>
           </div>
         </div>
 
@@ -42,7 +45,7 @@ const Dashboard = () => {
           <img className='w-14' src={assets.appointments_icon} alt="" />
           <div>
             <p className='text-xl font-semibold text-gray-600'>{appointments.length}</p>
-            <p className='text-gray-400'>Записи</p>
+            <p className='text-gray-400'>{t.allapp}</p>
           </div>
         </div>
 
@@ -50,7 +53,7 @@ const Dashboard = () => {
           <img className='w-14' src={assets.patients_icon} alt="" />
           <div>
             <p className='text-xl font-semibold text-gray-600'>{appointments.length}</p>
-            <p className='text-gray-400'>Пациенты</p>
+            <p className='text-gray-400'>{t.patients}</p>
           </div>
         </div>
       </div>
@@ -58,7 +61,7 @@ const Dashboard = () => {
       <div className='bg-white'>
         <div className='flex items-center gap-2.5 px-4 py-4 mt-10 rounded-t border'>
           <img src={assets.list_icon} alt="" />
-          <p className='font-semibold'>Последние записи</p>
+          <p className='font-semibold'>{t.latestapp}</p>
         </div>
 
         <div className='pt-4 border border-t-0'>

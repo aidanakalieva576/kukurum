@@ -1,11 +1,16 @@
 import { PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import React, { useState, useEffect, useRef } from "react";
+import translations from "../../utils";
+import { useContext } from "react";
+import { UnifiedContext } from "../../context/UnifiedContext";
 
 const CheckoutForm = ({ onClose }) => {
     const stripe = useStripe();
     const elements = useElements();
     const [isProcessing, setIsProcessing] = useState(false);
-    const modalRef = useRef(null); // Ссылка на модальное окно
+    const modalRef = useRef(null); 
+    const { language } = useContext(UnifiedContext)
+    const t = translations[language]
 
 
     const handleSubmit = async (e) => {
@@ -48,7 +53,7 @@ const CheckoutForm = ({ onClose }) => {
     };
 
 
-    // Обработка клика вне модального окна
+
     useEffect(() => {
         const handleOutsideClick = (event) => {
             if (modalRef.current && event.target === modalRef.current) {
@@ -60,7 +65,7 @@ const CheckoutForm = ({ onClose }) => {
 
         document.addEventListener("mousedown", handleOutsideClick);
 
-        // Очистка события при размонтировании компонента
+
         return () => {
             document.removeEventListener("mousedown", handleOutsideClick);
         };
@@ -69,7 +74,7 @@ const CheckoutForm = ({ onClose }) => {
     return (
         <div
             className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
-            ref={modalRef} // Обертка для модального окна
+            ref={modalRef} 
         >
             <div className="bg-white p-6 rounded-xl w-[400px] max-h-[80vh] overflow-y-auto shadow-lg">
                 <form onSubmit={handleSubmit}>
@@ -79,7 +84,7 @@ const CheckoutForm = ({ onClose }) => {
                         className="mt-4 w-full bg-primary text-white py-2 px-4 rounded disabled:opacity-50"
                         type = "submit"
                     >
-                        {isProcessing ? "Обработка..." : "Оплатить"}
+                        {isProcessing ? t.loadpay : t.pay}
                     </button>
                 </form>
             </div>

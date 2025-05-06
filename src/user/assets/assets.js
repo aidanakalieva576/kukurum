@@ -16,6 +16,19 @@ import upload_icon from './upload_icon.png'
 import stripe_logo from './stripe_logo.png'
 import razorpay_logo from './razorpay_logo.png'
 import sent_icon from './sent.png'
+import walpaper from './walpaper.png'
+import ball from './ball.png'
+import syr from './syr.gif'
+import video from 'C:/Users/Admin/OneDrive/Desktop/coursework/course/src/user/assets/video.png'
+import scelet1 from './scelet1.gif'
+import scelet2 from './scelet2.gif'
+import docai from './docai.png'
+import happy from 'C:/Users/Admin/OneDrive/Desktop/coursework/course/src/user/assets/happy.png'
+import sad from 'C:/Users/Admin/OneDrive/Desktop/coursework/course/src/user/assets/sad.png'
+import angry from 'C:/Users/Admin/OneDrive/Desktop/coursework/course/src/user/assets/angry.png'
+import worry from 'C:/Users/Admin/OneDrive/Desktop/coursework/course/src/user/assets/worry.png'
+import think from 'C:/Users/Admin/OneDrive/Desktop/coursework/course/src/user/assets/think.png'
+import treat from 'C:/Users/Admin/OneDrive/Desktop/coursework/course/src/user/assets/treat.png'
 import doc1 from './doc1.png'
 import doc2 from './doc2.png'
 import doc3 from './doc3.png'
@@ -58,7 +71,20 @@ export const assets = {
     upload_icon,
     stripe_logo,
     razorpay_logo,
-    sent_icon
+    sent_icon,
+    docai,
+    walpaper,
+    ball,
+    syr,
+    scelet1,
+    scelet2,
+    video,
+    happy,
+    sad,
+    think,
+    worry,
+    treat,
+    angry
 }
 
 export const doctorImages = {

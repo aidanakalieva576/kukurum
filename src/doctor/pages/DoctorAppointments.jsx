@@ -3,6 +3,7 @@ import { docappointments } from "../../admin/assets.admin/assets_admin/mock";
 import { UnifiedContext } from "../../context/UnifiedContext";
 import { assets } from "../../admin/assets.admin/assets_admin/assetsadmin";
 import { jwtDecode } from "jwt-decode";
+import translations from "../../utils";
 
 
 const DoctorAppointments = () => {
@@ -18,6 +19,8 @@ const DoctorAppointments = () => {
     });
     const [showSessionModal, setShowSessionModal] = useState(false);
     const [runningTimers, setRunningTimers] = useState({});
+    const { language } = useContext(UnifiedContext);
+    const t = translations[language];
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -54,7 +57,9 @@ const DoctorAppointments = () => {
                 setAppointments({
                     active: data.active_appointments || [],
                     history: data.history_appointments || []
-                });
+                    
+                })
+                console.log("data:", data.active_appointments, data.history_appointments);
             } catch (error) {
                 console.error("Ошибка при загрузке назначений:", error);
             } finally {
@@ -66,7 +71,7 @@ const DoctorAppointments = () => {
     }, []);
 
     if (loading) {
-        return <p className="p-5">Загрузка записей...</p>;
+        return <p className="p-5">{t.loadpay}</p>;
     }
 
 
@@ -137,17 +142,17 @@ const DoctorAppointments = () => {
 
     return (
         <div className="w-full max-w-6xl m-5">
-  <p className="mb-3 text-lg font-medium">All Appointments</p>
+  <p className="mb-3 text-lg font-medium">{t.AllAppointments}</p>
 
   <div className="bg-white border-rounded text-sm max-h-[80vh] min-h-[50vh] overflow-y-scroll">
     <div className="max-sm:hidden grid grid-cols-[0.5fr_2fr_1fr_1fr_3fr_1fr_1fr] gap-1 py-3 px-6 border-b">
       <p>#</p>
-      <p>Patient</p>
-      <p>Payment</p>
-      <p>Age</p>
-      <p>Date & Time</p>
-      <p>Fees</p>
-      <p className="ml-2">Action</p>
+      <p>{t.patient}</p>
+      <p>{t.payment}</p>
+      <p>{t.age}</p>
+      <p>{t.timedate}</p>
+      <p>{t.fee}</p>
+      <p className="ml-2">{t.Action}</p>
     </div>
 
     {/* Active Appointments */}
@@ -216,7 +221,7 @@ const DoctorAppointments = () => {
     {/* History Appointments */}
     {appointments.history.length > 0 && (
       <>
-        <p className="font-semibold text-sm mb-2 text-gray-400 mt-8">История</p>
+        <p className="font-semibold text-sm mb-2 text-gray-400 mt-8">{t.history}</p>
         {appointments.history.map((item, index) => (
           <div
             key={item.id}
@@ -240,9 +245,9 @@ const DoctorAppointments = () => {
             </p>
             <div className="flex">
               {item.cancelled ? (
-                <p className="text-red-400 text-xs font-medium">Отменено</p>
+                <p className="text-red-400 text-xs font-medium">{t.cancel}</p>
               ) : item.isCompleted ? (
-                <p className="text-green-500 text-xs font-medium">Завершено</p>
+                <p className="text-green-500 text-xs font-medium">{t.complete}</p>
               ) : null}
             </div>
           </div>
@@ -255,19 +260,19 @@ const DoctorAppointments = () => {
   {showModal && (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
       <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-sm">
-        <p className="text-lg font-semibold mb-4">Вы уверены, что хотите отменить запись?</p>
+        <p className="text-lg font-semibold mb-4">{t.Areyousure}</p>
         <div className="flex justify-end gap-2">
           <button
             onClick={() => setShowModal(false)}
             className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
           >
-            Отмена
+            {t.no}
           </button>
           <button
             onClick={cancelAppointment}
             className="px-4 py-2 bg-primary text-white rounded hover:bg-darkprimary"
           >
-            Да, отменить
+            {t.yes}
           </button>
         </div>
       </div>
@@ -278,14 +283,14 @@ const DoctorAppointments = () => {
   {showSessionModal && (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
       <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-sm">
-        <p className="text-xl font-semibold mb-4 text-green-600">Прием завершен!</p>
-        <p className="mb-2">Начало приёма: <b>{new Date(sessionData.startTime).toLocaleTimeString()}</b></p>
-        <p className="mb-4">Длительность: <b>{sessionData.duration} минут</b></p>
+        <p className="text-xl font-semibold mb-4 text-green-600">{t.AppComplete}</p>
+        <p className="mb-2">{t.AppStart} <b>{new Date(sessionData.startTime).toLocaleTimeString()}</b></p>
+        <p className="mb-4">{t.Duration} <b>{sessionData.duration} {t.min}</b></p>
         <button
           onClick={() => setShowSessionModal(false)}
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 w-full"
         >
-          Ок
+          {t.ok}
         </button>
       </div>
     </div>

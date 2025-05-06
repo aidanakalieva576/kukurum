@@ -10,18 +10,24 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@daily-co/daily-js": "^0.78.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@mui/material": "^7.0.2",
     "@stripe/react-stripe-js": "^3.6.0",
     "@stripe/stripe-js": "^7.0.0",
+    "@tailwindcss/typography": "^0.5.16",
     "axios": "^1.8.1",
+    "dayjs": "^1.11.13",
+    "face-api.js": "^0.22.2",
     "from": "^0.1.7",
     "jwt-decode": "^4.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-markdown": "^10.1.0",
     "react-router-dom": "^7.2.0",
     "react-toastify": "^11.0.5",
+    "react-webcam": "^7.2.0",
     "toast": "^0.5.4"
   },
   "devDependencies": {

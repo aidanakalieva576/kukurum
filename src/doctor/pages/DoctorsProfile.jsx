@@ -4,6 +4,7 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import { assets } from "../../admin/assets.admin/assets_admin/assetsadmin";
 import CalendarModal from '../../doctor/components/CalendarModal'; 
+import translations from '../../utils';
 
 
 const DoctorProfile = () => {
@@ -12,6 +13,8 @@ const DoctorProfile = () => {
   const [isEdit, setIsEdit] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [slotMode, setSlotMode] = useState("manual");
+  const { language } = useContext(UnifiedContext);
+  const t = translations[language];
 
   // Новые состояния для модального окна "Добавить запись"
   const [isBookingModalOpen, setBookingModalOpen] = useState(false);
@@ -80,7 +83,7 @@ const DoctorProfile = () => {
         docId: doctor.id,
         slotDate: formattedDate,
         slotTime: bookingTime,
-        email: bookingEmail || null // или задайте userId, если требуется
+        email: bookingEmail || null 
       }, {
         headers: {
           Authorization: `Bearer ${token}`
@@ -98,7 +101,7 @@ const DoctorProfile = () => {
   };
 
 
-  if (!doctor) return <p className="m-5 text-gray-600">Загрузка профиля...</p>;
+  if (!doctor) return <p className="m-5 text-gray-600">{t.loadpay}</p>;
 
   return (
     <div>
@@ -152,7 +155,7 @@ const DoctorProfile = () => {
 
           {/* About */}
           <div className='mt-3'>
-            <p className='text-sm font-medium'>About:</p>
+            <p className='text-sm font-medium'>{t.about}:</p>
             {isEdit ? (
               <textarea
                 className='w-full border rounded p-1 text-sm'
@@ -166,7 +169,7 @@ const DoctorProfile = () => {
 
           {/* Fees */}
           <p className='text-gray-600 font-medium mt-4'>
-            Appointment fee:{' '}
+            {t.AppFee}{' '}
             {isEdit ? (
               <input
                 type="number"
@@ -181,7 +184,7 @@ const DoctorProfile = () => {
 
           {/* Address */}
           <div className='flex flex-col gap-1 py-2'>
-            <p>Address</p>
+            <p>{t.address}</p>
             {isEdit ? (
               <>
                 <input
@@ -212,7 +215,7 @@ const DoctorProfile = () => {
               onChange={e => handleChange('available', e.target.checked)}
               disabled={!isEdit}
             />
-            <label>Available</label>
+            <label>{t.available}</label>
           </div>
           <img
             src={assets.calendar}
@@ -229,13 +232,13 @@ const DoctorProfile = () => {
               onClick={handleSave}
               className='px-4 py-1 bg-primary text-white text-sm rounded-full hover:bg-primary/90 transition-all'
             >
-              Save
+              {t.save}
             </button>
             <button
               onClick={() => setIsEdit(false)}
               className='px-4 py-1 border border-gray-400 text-sm rounded-full'
             >
-              Cancel
+              {t.no}
             </button>
           </div>
         ) : (
@@ -244,20 +247,20 @@ const DoctorProfile = () => {
               onClick={() => setIsEdit(true)}
               className='px-4 py-1 border border-primary text-sm rounded-full hover:bg-primary hover:text-white transition-all'
             >
-              Edit
+              {t.edit}
             </button>
             <button
               onClick={() => setIsSettingsOpen(true)}
               className='px-4 py-1 border border-blue-400 text-sm text-blue-600 rounded-full hover:bg-blue-50 transition-all'
             >
-              Настроить
+              {t.Tune}
             </button>
             {doctor.settings && (
               <button
                 onClick={() => setBookingModalOpen(true)} // Изменили на открытие модального окна
                 className='px-4 py-1 bg-primary text-white text-sm rounded-full hover:bg-primary/90 transition-all'
               >
-                Добавить запись
+                {t.AddApp}
               </button>
             )}
           </div>
@@ -266,7 +269,7 @@ const DoctorProfile = () => {
       {isSettingsOpen && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 w-[90%] max-w-md shadow-lg relative">
-            <h2 className="text-lg font-semibold mb-4">Настройка слотов</h2>
+            <h2 className="text-lg font-semibold mb-4">{t.SettingSlots}</h2>
 
             <div className="flex flex-col gap-3">
               <label className="flex items-center gap-2">
@@ -277,7 +280,7 @@ const DoctorProfile = () => {
                   checked={slotMode === "manual"}
                   onChange={() => setSlotMode("manual")}
                 />
-                Ручное создание слотов
+                {t.Manual}
               </label>
 
               <label className="flex items-center gap-2">
@@ -288,7 +291,7 @@ const DoctorProfile = () => {
                   checked={slotMode === "auto"}
                   onChange={() => setSlotMode("auto")}
                 />
-                Автоматическая генерация слотов
+                {t.auto}
               </label>
             </div>
 
@@ -297,7 +300,7 @@ const DoctorProfile = () => {
                 onClick={() => setIsSettingsOpen(false)}
                 className="px-4 py-1 border rounded-full text-sm"
               >
-                Отмена
+                {t.no}
               </button>
               <button
                 onClick={async () => {
@@ -330,15 +333,15 @@ const DoctorProfile = () => {
                       }
                     );
 
-                    await fetchDoctorInfo();  // Обновляем информацию о враче
-                    setIsSettingsOpen(false);  // Закрываем окно настроек
+                    await fetchDoctorInfo();  
+                    setIsSettingsOpen(false); 
                   } catch (err) {
                     toast.error("Ошибка при сохранении настроек: " + (err.response?.data?.detail || err.message));
                   }
                 }}
                 className="px-4 py-1 bg-primary text-white rounded-full text-sm"
               >
-                Сохранить
+                Save
               </button>
             </div>
           </div>
@@ -358,10 +361,10 @@ const DoctorProfile = () => {
       {isBookingModalOpen && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 w-[90%] max-w-md shadow-lg relative">
-            <h2 className="text-lg font-semibold mb-4">Добавить запись</h2>
+            <h2 className="text-lg font-semibold mb-4">{t.AddApp}...</h2>
             <div className="flex flex-col gap-3">
               <label className="flex flex-col gap-1">
-                Почта клиента:
+              {t.emailCLient}
                 <input
                   type="email"
                   value={bookingEmail}
@@ -370,7 +373,7 @@ const DoctorProfile = () => {
                 />
               </label>
               <label className="flex flex-col gap-1">
-                Время записи:
+              {t.Appotime}
                 <input
                   type="time"
                   value={bookingTime}
@@ -379,7 +382,7 @@ const DoctorProfile = () => {
                 />
               </label>
               <label className="flex flex-col gap-1">
-                Дата записи:
+              {t.Appodate}
                 <input
                   type="date"
                   value={bookingDate}
@@ -393,13 +396,13 @@ const DoctorProfile = () => {
                 onClick={() => setBookingModalOpen(false)}
                 className="px-4 py-1 border rounded-full text-sm"
               >
-                Отмена
+                {t.no}
               </button>
               <button
                 onClick={handleAddBooking}
                 className="px-4 py-1 bg-primary text-white rounded-full text-sm"
               >
-                Добавить
+                {t.add}
               </button>
             </div>
           </div>

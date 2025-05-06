@@ -1,19 +1,20 @@
 import { useState, useEffect } from "react";
+import { useContext } from "react";
+import { UnifiedContext } from "../../context/UnifiedContext";
+import translations from "../../utils";
 
 const CalendarModal = ({ doctorId, onClose }) => {
     const [date, setDate] = useState(new Date());
     const [selectedDay, setSelectedDay] = useState(null);
     const [showDayModal, setShowDayModal] = useState(false);
+    const { language } = useContext(UnifiedContext);
+    const t = translations[language];
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const getMonthName = (date) => {
-        const months = [
-            "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
-            "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь",
-        ];
-        return `${months[date.getMonth()]} ${date.getFullYear()}`;
+        return `${t.months[date.getMonth()]} ${date.getFullYear()}`;
     };
 
     const getDaysInMonth = (month, year) => new Date(year, month + 1, 0).getDate();
@@ -124,13 +125,13 @@ const CalendarModal = ({ doctorId, onClose }) => {
                     </div>
 
                     <table className="w-full table-auto border-collapse text-center text-lg">
-                        <thead>
-                            <tr className="bg-gray-100">
-                                {["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"].map((day, index) => (
-                                    <th key={index} className="border border-gray-300 p-3">{day}</th>
-                                ))}
-                            </tr>
-                        </thead>
+                    <thead>
+    <tr className="bg-gray-100">
+        {t.weekdaysShort.map((day, index) => (
+            <th key={index} className="border border-gray-300 p-3">{day}</th>
+        ))}
+    </tr>
+</thead>
                         <tbody>
                             {getCalendarDays(date.getMonth(), date.getFullYear()).map((week, i) => (
                                 <tr key={i}>
@@ -159,7 +160,7 @@ const CalendarModal = ({ doctorId, onClose }) => {
                             onClick={onClose}
                             className="mt-4 px-6 py-2 bg-primary text-white rounded hover:bg-primary/90 shadow transition"
                         >
-                            Закрыть
+                            {t.close}
                         </button>
                     </div>
                 </div>
@@ -168,7 +169,7 @@ const CalendarModal = ({ doctorId, onClose }) => {
             {showDayModal && selectedDay && (
                 <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
                     <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-lg">
-                        <h3 className="text-xl font-bold text-center mb-4">Записи на {selectedDay.toLocaleDateString("ru-RU")}</h3>
+                        <h3 className="text-xl font-bold text-center mb-4">{t.zapisi_na} {selectedDay.toLocaleDateString("ru-RU")}</h3>
                         {appointments.length > 0 ? (
                             <ul className="text-sm text-gray-700 space-y-2 max-h-80 overflow-y-auto">
                                 {appointments.map((appt) => (
@@ -181,7 +182,7 @@ const CalendarModal = ({ doctorId, onClose }) => {
                                 ))}
                             </ul>
                         ) : (
-                            <p className="text-center text-gray-500">Нет записей на эту дату.</p>
+                            <p className="text-center text-gray-500">{t.no_zapisi}</p>
                         )}
 
                         <div className="text-center mt-6">
@@ -189,7 +190,7 @@ const CalendarModal = ({ doctorId, onClose }) => {
                                 onClick={() => setShowDayModal(false)}
                                 className="px-5 py-2 bg-primary text-white rounded hover:bg-primary/90 transition"
                             >
-                                Закрыть
+                            {t.close}
                             </button>
                         </div>
                     </div>

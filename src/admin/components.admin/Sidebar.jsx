@@ -5,9 +5,12 @@ import home_icon from "../assets.admin/assets_admin/home_icon.svg"
 import appointmen_icon from "../assets.admin/assets_admin/appointment_icon.svg";
 import add_icon from "../assets.admin/assets_admin/add_icon.svg";
 import people_icon from "../assets.admin/assets_admin/people_icon.svg";
+import translations from "../../utils";
 
 const Sidebar = () => {
   const { token } = useContext(UnifiedContext);
+  const { language } = useContext(UnifiedContext);
+  const t = translations[language];
 
   // const token =
   //   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InJhcmFAZ21haWwuY29tIiwiZXhwIjoxNzQzNzA0NDI1fQ.y0nAWsyg7II1rsMdBNz17UQ-N3HcL3hmYbM5v7I1x20";
@@ -25,7 +28,7 @@ const Sidebar = () => {
           to="/admin/dashboard"
         >
           <img src={home_icon} alt="" />
-          <p>Панель управления</p>
+          <p>{t.panel}</p>
         </NavLink>
         <NavLink
           className={({ isActive }) =>
@@ -36,7 +39,7 @@ const Sidebar = () => {
           to="/admin/all-appointments"
         >
           <img src={appointmen_icon} alt="" />
-          <p>Записи</p>
+          <p>{t.zapici}</p>
         </NavLink>
         <NavLink
           className={({ isActive }) =>
@@ -47,7 +50,7 @@ const Sidebar = () => {
           to="/admin/add-doctor"
         >
           <img src={add_icon} alt="" />
-          <p>Добавить доктора</p>
+          <p>{t.add_doctor}</p>
         </NavLink>
         <NavLink
           className={({ isActive }) =>
@@ -58,7 +61,7 @@ const Sidebar = () => {
           to="/admin/doctor-list"
         >
           <img src={people_icon} alt="" />
-          <p>Список докторов</p>
+          <p>{t.spisok}</p>
         </NavLink>
       </ul>
     </div>

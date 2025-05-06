@@ -1,9 +1,14 @@
 import React from 'react'
 import { assets } from '../assets/assets'
 import { useNavigate } from 'react-router-dom'
+import { UnifiedContext } from '../../context/UnifiedContext'
+import translations from '../../utils'
+import { useContext } from 'react'
 
 
 const Banner = () => {
+  const { language } = useContext(UnifiedContext)
+  const t = translations[language]
 
   const navigate = useNavigate()
   return (
@@ -11,10 +16,10 @@ const Banner = () => {
       {/* --------левая сторона----------- */}
       <div className='flex-1 py-8 sm:py-10 md:py-16 lg:py-24 lg:pl-5='>
             <div className='text-xl sm:text-2xl md:text-3xl lg:text-5xl font-semibold text-white'>
-                <p>Запишись на прием</p>
-                <p className='mt-4'>У нас 100+ проверенных процедур</p>
+                <p>{t.banner1}</p>
+                <p className='mt-4'>{t.banner2}</p>
             </div>
-            <button onClick={()=> {navigate(`/doctors`); scrollTo(0,0)}} className='bg-white text-sm sm:text-base text-gray-600 px-8 py-3 rounded-full mt-6 hover:scale-105 transition-all'>Создать запись</button>
+            <button onClick={()=> {navigate(`/doctors`); scrollTo(0,0)}} className='bg-white text-sm sm:text-base text-gray-600 px-8 py-3 rounded-full mt-6 hover:scale-105 transition-all'>{t.zapis}</button>
       </div>
 
       {/* -----------правая сторона-------- */}

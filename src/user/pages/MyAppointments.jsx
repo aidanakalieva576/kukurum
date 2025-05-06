@@ -6,6 +6,7 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import CheckoutForm from '../components/CheckoutForm';
+import translations from '../../utils';
 
 
 const MyAppointments = () => {
@@ -15,7 +16,8 @@ const MyAppointments = () => {
     active: [],
   });
   const stripePromise = loadStripe('pk_test_51RCCFKCrNkMgRyYRIYGhZdryS3RVKWoO5EmQnRz0tUD3gz0FPns69u9vTpnrAH1toUFfwyfpB4sbHSYRsxDFL2eA009SNW8p4o');
-
+  const { language } = useContext(UnifiedContext);
+  const t = translations[language]
 
   const fetchAppointments = async () => {
     if (!user || !user.id || !token) return;
@@ -57,7 +59,7 @@ const MyAppointments = () => {
 
       const { data } = await axios.post(
         `${backendUrl}/users_api/cancel-appointment`,
-        { appointmentId }, // <-- отправляем в теле запроса
+        { appointmentId }, 
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -69,7 +71,7 @@ const MyAppointments = () => {
 
       if (data?.message) {
         toast.success('Запись успешно отменена');
-        fetchAppointments(); // <-- обновляем список записей
+        fetchAppointments(); 
       } else {
         toast.error('Ошибка при отмене');
       }
@@ -87,35 +89,7 @@ const MyAppointments = () => {
 
   const [clientSecret, setClientSecret] = useState(null);
 
-  // const handlePayClick = async () => {
-  //   const res = await fetch(`${backendUrl}/users_api/create-payment`, { method: "POST" });
-  //   const data = await res.json();
-  //   setClientSecret(data.clientSecret);
-  //   console.log("Ответ от сервера", data)
-  // };
 
-  // const handlePay = async (appointmentId) => {
-  //   try {
-  //     const { data } = await axios.post(
-  //       `${backendUrl}/users_api/create-payment`,
-  //       { appointmentId: appointmentId }
-  //     );
-
-  //     toast.success(data.message);
-
-  //     // Обновляем appointments
-  //     setAppointments((prev) =>
-  //       prev.map((item) =>
-  //         item.appointmentId === appointmentId
-  //           ? { ...item, payment: true }
-  //           : item
-  //       )
-  //     );
-  //   } catch (error) {
-  //     console.error(error);
-  //     toast.error('Ошибка при оплате');
-  //   }
-  // };
 
   const handlePay = async (appointmentId) => {
     console.log("Клик по оплате, appointmentId:", appointmentId);
@@ -134,7 +108,7 @@ const MyAppointments = () => {
         console.log("clientSecret установлен:", data.clientSecret);
       } else {
         console.warn("Ответ не содержит clientSecret", data);
-        toast.error("Ошибка: не получен ключ оплаты");
+        toast.error("Ошибка/Error");
       }
     } catch (error) {
       console.error("Ошибка при оплате:", error.response?.data || error.message);
@@ -146,11 +120,11 @@ const MyAppointments = () => {
   console.log("clientSecret", clientSecret);
   return (
     <div>
-      <p className='pb-3 mt-12 font-medium text-zinc-700 border-b'>Ближайшие записи</p>
+      <p className='pb-3 mt-12 font-medium text-zinc-700 border-b'>{t.blizhaishie}</p>
 
       <div>
         {blizhaishie.length === 0 && (
-          <p className="text-zinc-500 mt-4">У вас пока нет ближайших записей.</p>
+          <p className="text-zinc-500 mt-4">{t.noblizhaishie}</p>
         )}
 
         {blizhaishie.map((item, index) => {
@@ -166,11 +140,11 @@ const MyAppointments = () => {
               <div className='flex-1 text-sm text-zinc-600'>
                 <p className='text-neutral-800 font-semibold'>{item.doctor.name}</p>
                 <p>{item.doctor.speciality}</p>
-                <p className='text-zinc-700 font-medium mt-1'>Адрес:</p>
+                <p className='text-zinc-700 font-medium mt-1'>{t.timedate}</p>
                 <p className='text-xs'>{item.doctor.address.line1}</p>
                 <p className='text-xs'>{item.doctor.address.line2}</p>
                 <p className='text-xs mt-1'>
-                  <span className='text-sm text-neutral-700 font-medium'>Дата & Время:</span>{' '}
+                  <span className='text-sm text-neutral-700 font-medium'>{t.address}</span>{' '}
                   {readableDate}, {item.slotTime}
                 </p>
               </div>
@@ -181,11 +155,11 @@ const MyAppointments = () => {
                     onClick={() => handlePay(item.appointmentId)}
                     className='text-sm text-stone-500 text-center sm:min-w-48 py-2 border rounded hover:bg-primary hover:text-white transition-all duration-300 justify-end'
                   >
-                    Оплатить онлайн
+                    {t.onlinePay}
                   </button>
                 ) : (
                   <p className='text-xl text-green-600 text-center sm:min-w-48 py-2 rounded justify-center items-center'>
-                    Оплачено
+                    {t.onlineDone}
                   </p>
                 )}
 
@@ -195,7 +169,7 @@ const MyAppointments = () => {
                     onClick={() => cancelAppointment(item.appointmentId)}
                     className="text-sm text-stone-500 text-center sm:min-w-48 py-2 border rounded hover:bg-red-500 hover:text-white transition-all duration-300 justify-end"
                   >
-                    Отменить
+                    {t.cansel}
                   </button>
                 )}
               </div>
@@ -203,11 +177,11 @@ const MyAppointments = () => {
           );
         })}
       </div>
-      <p className='pb-3 mt-12 font-medium text-zinc-700 border-b'>История</p>
+      <p className='pb-3 mt-12 font-medium text-zinc-700 border-b'>{t.history}</p>
 
       <div>
         {istoria.length === 0 && (
-          <p className="text-zinc-500 mt-4">У вас пока нет истории записей.</p>
+          <p className="text-zinc-500 mt-4">{t.nohistory}</p>
         )}
 
         {istoria.map((item, index) => {
@@ -223,11 +197,11 @@ const MyAppointments = () => {
               <div className='flex-1 text-sm text-zinc-600'>
                 <p className='text-neutral-800 font-semibold'>{item.doctor.name}</p>
                 <p>{item.doctor.speciality}</p>
-                <p className='text-zinc-700 font-medium mt-1'>Адрес:</p>
+                <p className='text-zinc-700 font-medium mt-1'>{t.address}</p>
                 <p className='text-xs'>{item.doctor.address.line1}</p>
                 <p className='text-xs'>{item.doctor.address.line2}</p>
                 <p className='text-xs mt-1'>
-                  <span className='text-sm text-neutral-700 font-medium'>Дата & Время:</span>{' '}
+                  <span className='text-sm text-neutral-700 font-medium'>{t.timedate}</span>{' '}
                   {readableDate}, {item.slotTime}
                 </p>
               </div>
@@ -235,11 +209,11 @@ const MyAppointments = () => {
               <div className='flex flex-col gap-2 justify-center items-center opacity-200'>
                 {item.cancelled ? (
                   <p className='text-xl text-zinc-500 text-center sm:min-w-48 py-2 rounded'>
-                    Отменен
+                    {t.canceled}
                   </p>
                 ) : item.isCompleted ? (
                   <p className='text-xl text-green-600 text-center sm:min-w-48 py-2 rounded'>
-                    Завершен
+                    {t.completed}
                   </p>
                 ) : null}
               </div>

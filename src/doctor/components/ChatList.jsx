@@ -2,11 +2,14 @@ import { useContext, useEffect, useState } from "react";
 import { UnifiedContext } from "../../context/UnifiedContext";
 import Chat from "../pages/DoctorChat";
 import axios from "axios";
+import translations from "../../utils";
 
 const ChatPage = () => {
   const { token, backendUrl } = useContext(UnifiedContext);
   const [clients, setClients] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
+  const { language } = useContext(UnifiedContext)
+  const t = translations[language]
 
   const headers = { Authorization: `Bearer ${token}` };
 
@@ -28,10 +31,10 @@ const ChatPage = () => {
     <div className="flex max-w-6xl mx-auto p-6 gap-6 font-sans text-gray-800">
       {/* Левая колонка — список клиентов */}
       <div className="w-1/4 border border-gray-200 rounded-2xl p-5 bg-white shadow-sm">
-        <h3 className="text-medium font-semibold mb-4 text-blue-900">Список клиентов</h3>
+        <h3 className="text-medium font-semibold mb-4 text-blue-900">{t.list}</h3>
         <ul className="space-y-3">
           {clients.length === 0 ? (
-            <li className="text-gray-400 italic">Клиенты появятся здесь</li>
+            <li className="text-gray-400 italic">{t.clientswill}</li>
           ) : (
             clients.map((client) => (
               <li key={client.id}>
@@ -60,7 +63,7 @@ const ChatPage = () => {
           <Chat receiverId={selectedUser.id} isDoctor={true} />
         ) : (
           <div className="h-96 border border-gray-200 rounded-2xl flex items-center justify-center text-gray-400 bg-gray-50 text-lg shadow-inner">
-            Выберите пользователя, чтобы начать чат
+           {t.choosedoc}
           </div>
         )}
       </div>

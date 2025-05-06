@@ -1,8 +1,13 @@
 import React, { useState } from "react";
 import { assets } from "../../assets.admin/assets_admin/assetsadmin";
 import { toast } from "react-toastify";
+import { useContext } from "react";
+import { UnifiedContext } from "../../../context/UnifiedContext";
+import translations from "../../../utils";
 
 const AddDoctor = () => {
+  const { language } = useContext(UnifiedContext);
+  const t = translations[language];
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -32,35 +37,15 @@ const AddDoctor = () => {
     }
   };
 
-  const uploadImageToCloudinary = async () => {
-    const data = new FormData();
-    data.append("file", image);
-    data.append("upload_preset", "your_preset"); // <-- замени
-    data.append("cloud_name", "djmrfjkki"); // <-- замени
-
-    const res = await fetch("https://api.cloudinary.com/v1_1/your_cloud_name/image/upload", {
-      method: "POST",
-      body: data,
-    });
-    const json = await res.json();
-    return json.secure_url;
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (
-      !form.name ||
-      !form.email ||
-      !form.password ||
-      !form.fees ||
-      !form.degree ||
-      !form.address1 ||
-      !form.address2 ||
-      !form.about ||
-      !image
+      !form.name || !form.email || !form.password ||
+      !form.fees || !form.degree || !form.address1 ||
+      !form.address2 || !form.about || !image
     ) {
-      setError("Пожалуйста, заполните все поля и загрузите изображение.");
+      setError(t.error_fill_all_fields);
       return;
     }
 
@@ -77,7 +62,7 @@ const AddDoctor = () => {
       line2: form.address2
     }));
     formData.append("about", form.about);
-    formData.append("image", image); // файл
+    formData.append("image", image);
 
     try {
       const res = await fetch("http://localhost:8000/admin/add_doctor", {
@@ -86,10 +71,9 @@ const AddDoctor = () => {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || "Ошибка при добавлении");
+      if (!res.ok) throw new Error(data.detail || t.error_adding_doctor);
 
-      toast("Доктор успешно добавлен")
-
+      toast(t.success_doctor_added);
       setForm({
         name: "", email: "", password: "", experience: "1 year", fees: "",
         speciality: "General physician", degree: "", address1: "", address2: "", about: ""
@@ -98,13 +82,13 @@ const AddDoctor = () => {
       setPreview(null);
       setError("");
     } catch (err) {
-      setError(err.message || "Произошла ошибка");
+      setError(err.message || t.error_generic);
     }
   };
 
   return (
     <form className="m-5 w-full" onSubmit={handleSubmit}>
-      <p className="mb-3 text-lg font-medium">Add Doctor</p>
+      <p className="mb-3 text-lg font-medium">{t.add_doctor}</p>
 
       <div className="bg-white px-8 py-8 border rounded w-full max-w-4xl max-h-[80-vh] overflow-scroll">
         {error && <p className="text-red-500 mb-4">{error}</p>}
@@ -118,164 +102,76 @@ const AddDoctor = () => {
             />
           </label>
           <input type="file" id="doc-img" hidden onChange={handleImageChange} />
-          <p>
-            Загрузить картинку <br /> доктора
-          </p>
+          <p>{t.upload_image}</p>
         </div>
 
         <div className="flex flex-col lg:flex-row items-start gap-10 text-gray-600">
           <div className="w-full lg:flex-1 flex flex-col gap-4">
             <div className="flex-1 flex flex-col gap-1">
-              <p>Имя доктора</p>
-              <input
-                type="text"
-                name="name"
-                value={form.name}
-                onChange={handleChange}
-                placeholder="Имя"
-                required
-              />
+              <p>{t.doctor_name}</p>
+              <input type="text" name="name" value={form.name} onChange={handleChange} placeholder={t.name} required className="w-full rounded border px-3 py-2 focus:outline-none focus:border-primary" />
             </div>
 
             <div className="flex-1 flex flex-col gap-1">
-              <p>Почта доктора</p>
-              <input
-                className="border rounded px-3 py-2"
-                type="email"
-                name="email"
-                value={form.email}
-                onChange={handleChange}
-                placeholder="Почта"
-                required
-              />
+              <p>{t.doctor_email}</p>
+              <input type="email" name="email" value={form.email} onChange={handleChange} placeholder={t.email} required className="w-full rounded border px-3 py-2 focus:outline-none focus:border-primary" />
             </div>
 
             <div className="flex-1 flex flex-col gap-1">
-              <p>Пароль доктора</p>
-              <input
-                className="border rounded px-3 py-2"
-                type="password"
-                name="password"
-                value={form.password}
-                onChange={handleChange}
-                placeholder="Пароль"
-                required
-              />
+              <p>{t.doctor_password}</p>
+              <input type="password" name="password" value={form.password} onChange={handleChange} placeholder={t.password} required className="w-full rounded border px-3 py-2 focus:outline-none focus:border-primary" />
             </div>
 
             <div className="flex-1 flex flex-col gap-1">
-              <p>Опыт</p>
-              <select
-                className="border rounded px-3 py-2"
-                name="Опыт"
-                value={form.experience}
-                onChange={handleChange}
-              >
-                <option value="1 year">1 год</option>
-                <option value="2 year">2 года</option>
-                <option value="3 year">3 года</option>
-                <option value="4 year">4 года</option>
-                <option value="5 year">5 лет</option>
-                <option value="6 year">6 лет</option>
-                <option value="7 year">7 лет</option>
-                <option value="8 year">8 лет</option>
-                <option value="10 year">10 лет</option>
-                <option value="1 year">11 лет</option>
-                <option value="2 year">12 лет</option>
-                <option value="3 year">13 лет</option>
-                <option value="4 year">14 лет</option>
-                <option value="5 year">15 лет</option>
-                <option value="6 year">16 лет</option>
-                <option value="7 year">17 лет</option>
-                <option value="8 year">18 лет</option>
-                <option value="10 year">20 лет</option>
+              <p>{t.experience}</p>
+              <select name="experience" value={form.experience} onChange={handleChange}>
+                {[...Array(20).keys()].map((i) => (
+                  <option key={i + 1} value={`${i + 1} year`}>
+                    {i + 1} {t.year}
+                  </option>
+                ))}
               </select>
             </div>
 
             <div className="flex-1 flex flex-col gap-1">
-              <p>Стоимость</p>
-              <input
-                className="border rounded px-3 py-2"
-                type="number"
-                name="fees"
-                value={form.fees}
-                onChange={handleChange}
-                placeholder="Стоимость"
-                required
-              />
+              <p>{t.fees}</p>
+              <input type="number" name="fees" value={form.fees} onChange={handleChange} placeholder={t.fees} required className="w-full rounded border px-3 py-2 focus:outline-none focus:border-primary" />
             </div>
           </div>
 
           <div className="w-full lg:flex-1 flex flex-col gap-4">
             <div className="flex-1 flex flex-col gap-1">
-              <p>Специальность</p>
-              <select
-                className="border rounded px-3 py-2"
-                name="Специальность"
-                value={form.speciality}
-                onChange={handleChange}
-              >
-                <option value="General physician">Главный врач</option>
-                <option value="Gynecologist">ГИнеколог</option>
-                <option value="Dermatologist">Дерматолог</option>
-                <option value="Pedeatrians">Педиатр</option>
-                <option value="Neurologist">Невролог</option>
-                <option value="Gastroenterologist">Гастроэнтеролог</option>
+              <p>{t.speciality}</p>
+              <select name="speciality" value={form.speciality} onChange={handleChange}>
+                <option value="General physician">{t.specialist_gp}</option>
+                <option value="Gynecologist">{t.specialist_gynecologist}</option>
+                <option value="Dermatologist">{t.specialist_dermatologist}</option>
+                <option value="Pedeatrians">{t.specialist_pediatrician}</option>
+                <option value="Neurologist">{t.specialist_neurologist}</option>
+                <option value="Gastroenterologist">{t.specialist_gastroenterologist}</option>
               </select>
             </div>
 
             <div className="flex-1 flex flex-col gap-1">
-              <p>Квалификация</p>
-              <input
-                className="border rounded px-3 py-2"
-                type="text"
-                name="degree"
-                value={form.degree}
-                onChange={handleChange}
-                placeholder="Квалификация"
-                required
-              />
+              <p>{t.degree}</p>
+              <input type="text" name="degree" value={form.degree} onChange={handleChange} placeholder={t.degree} required className="w-full rounded border px-3 py-2 focus:outline-none focus:border-primary" />
             </div>
 
             <div className="flex-1 flex flex-col gap-1">
-              <p>Адрес</p>
-              <input
-                className="border rounded px-3 py-2"
-                type="text"
-                name="address1"
-                value={form.address1}
-                onChange={handleChange}
-                placeholder="Адрес 1"
-                required
-              />
-              <input
-                className="border rounded px-3 py-2"
-                type="text"
-                name="address2"
-                value={form.address2}
-                onChange={handleChange}
-                placeholder="Адрес 2"
-                required
-              />
+              <p>{t.address}</p>
+              <input type="text" name="address1" value={form.address1} onChange={handleChange} placeholder={t.address1} required className="w-full rounded border px-3 py-2 focus:outline-none focus:border-primary" />
+              <input type="text" name="address2" value={form.address2} onChange={handleChange} placeholder={t.address2} required className="w-full rounded border px-3 py-2 focus:outline-none focus:border-primary mt-2" />
             </div>
           </div>
         </div>
 
         <div className="flex-1 flex flex-col gap-1">
-          <p className="mt-4 mb-2">Подробнее</p>
-          <textarea
-            className="w-full px-4 pt-2 border rounded"
-            name="about"
-            value={form.about}
-            onChange={handleChange}
-            placeholder="Напишите подробнее про доктора"
-            rows={5}
-            required
-          />
+          <p className="mt-4 mb-2">{t.about}</p>
+          <textarea name="about" value={form.about} onChange={handleChange} placeholder={t.about_placeholder} rows={5} required className="w-full rounded border px-3 py-2 focus:outline-none focus:border-primary" />
         </div>
 
         <button type="submit" className="bg-primary px-10 py-3 mt-4 text-white rounded-full">
-          Добавить доктора
+          {t.submit_add_doctor}
         </button>
       </div>
     </form>

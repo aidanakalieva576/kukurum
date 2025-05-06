@@ -13,6 +13,11 @@ const UnifiedContextProvider = (props) => {
   const [doctors, setDoctors] = useState([]);
   const currency = "₸";
   const currencyAdmin = "$";
+  const [language, setLanguage] = useState(localStorage.getItem("lang") || "ru");
+
+  useEffect(() => {
+    localStorage.setItem("lang", language);
+  }, [language]);
   
 
   const backendUrl = "http://localhost:8000";
@@ -77,12 +82,22 @@ const UnifiedContextProvider = (props) => {
   }, []);
 
   const slotDateFormat = (slotDate) => {
-    if (!slotDate) return "Неверная дата";
+    if (!slotDate) return language === "ru" ? "Неверная дата" : "Invalid date";
+  
     const [day, month, year] = slotDate.split("_");
-    const months = [
-      "", "января", "февраля", "марта", "апреля", "мая", "июня",
-      "июля", "августа", "сентября", "октября", "ноября", "декабря"
-    ];
+  
+    const monthNames = {
+      ru: [
+        "", "января", "февраля", "марта", "апреля", "мая", "июня",
+        "июля", "августа", "сентября", "октября", "ноября", "декабря"
+      ],
+      en: [
+        "", "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+      ]
+    };
+  
+    const months = monthNames[language] || monthNames["ru"];
     return `${day} ${months[Number(month)]} ${year}`;
   };
   
@@ -111,6 +126,7 @@ const UnifiedContextProvider = (props) => {
     user, setUser,
     doctors, getDoctorsData, setDoctors,
     currency,
+    language, setLanguage,
     // Админ
     aToken, setAToken,
     currencyAdmin,
@@ -118,6 +134,7 @@ const UnifiedContextProvider = (props) => {
     calculateAge,
     // Общее
     backendUrl
+
   };
 
   return (

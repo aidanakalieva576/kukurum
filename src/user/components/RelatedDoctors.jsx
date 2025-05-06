@@ -9,21 +9,21 @@ const RelatedDoctors = ({ speciality, docId }) => {
 
 
   useEffect(() => {
-    console.log('Doctors in UnifiedContext:', doctors); // Проверка списка врачей
-    console.log('Received docId:', docId); // Проверка docId
+    console.log('Doctors in UnifiedContext:', doctors);
+    console.log('Received docId:', docId); 
 
     if (doctors.length > 0 && speciality) {
       // Убираем префикс 'doc' из docId и преобразуем его в строку
       const doctorIdNumber = Number(docId.replace('doc', ''));
 
-      console.log('doctorIdNumber:', doctorIdNumber); // Проверка ID
+      console.log('doctorIdNumber:', doctorIdNumber); 
       doctors.forEach(doc => console.log('Doctor ID:', doc.id, 'Type:', typeof doc.id));
 
-      // Фильтруем список врачей по специальности и исключаем текущего врача
+   
       const doctorsData = doctors.filter((doc) =>
         doc.speciality === speciality && doc.id !== doctorIdNumber
       );
-      console.log('Filtered doctors:', doctorsData); // Логирование отфильтрованных врачей
+      console.log('Filtered doctors:', doctorsData); 
       setRelDoc(doctorsData);
     }
   }, [doctors, speciality, docId]);
