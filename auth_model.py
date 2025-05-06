@@ -1,20 +1,32 @@
+from cmath import e
 from datetime import datetime, timedelta, timezone
-from typing import Union
+from io import BytesIO
+import io
+import json
+import pickle
+from typing import List, Optional, Union
+import face_recognition
 from fastapi import Depends, HTTPException, Request, logger, status
 import jwt
-from sqlalchemy import select
+import numpy as np
+from sqlalchemy import select, text
 
-from tables.models import Admin, Doctor, User
+from models import Admin, Doctor, User
 import asyncio
 from passlib.context import CryptContext
 import os
 from sqlalchemy.ext.asyncio import AsyncSession
 import logging
-from tables.models import  async_session_maker
+from models import  async_session_maker
 from gitignire.api import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 
 
-
+def extract_face_encoding(image_bytes: bytes):
+    image = face_recognition.load_image_file(io.BytesIO(image_bytes))
+    encodings = face_recognition.face_encodings(image)
+    if not encodings:
+        return None
+    return encodings[0].tolist()
 
 
 
@@ -51,7 +63,7 @@ class AuthService:
             return {"token": access_token, "token_type": "bearer", "role": "doctor"}
 
         # Проверка: является ли пользователь обычным пользователем
-        user = await self.user_repository.select_user_by_email(email, password)
+        user = await self.user_repository.select_user_by_email(email)
         if user and user.password == password:
             access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
             access_token = self.create_access_token(
@@ -68,6 +80,42 @@ class AuthService:
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    async def login_with_faceid(self, image_bytes: bytes, db: AsyncSession):
+        try:
+            image_np = face_recognition.load_image_file(BytesIO(image_bytes))
+            encodings = face_recognition.face_encodings(image_np)
+            if not encodings:
+                raise HTTPException(status_code=400, detail="No face found in the image.")
+            input_encoding = encodings[0]
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid image data")
+
+        # Получаем пользователей с заполненным face_encoding
+        result = await db.execute(
+            select(User.id, User.email, User.face_encoding).where(User.face_encoding.isnot(None))
+        )
+        users = result.all()
+
+        for user_id, email, face_encoding_binary in users:
+            try:
+                db_encoding = pickle.loads(face_encoding_binary)
+            except Exception:
+                continue  # пропускаем, если не удалось декодировать
+
+            match = face_recognition.compare_faces([db_encoding], input_encoding, tolerance=0.6)[0]
+            if match:
+                access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+                access_token = self.create_access_token(
+                    data={"email": email, "role": "user"},
+                    expires_delta=access_token_expires
+                )
+                print("token", access_token, "role", "user (face)")
+                return {"token": access_token, "token_type": "bearer", "role": "user"}
+
+        raise HTTPException(status_code=401, detail="Face not recognized")
+
+
+
 
         
 
@@ -79,23 +127,93 @@ class AuthService:
     
 
 
-    async def register_user(self, name: str, email: str, password: str):
-        existing_user = await self.user_repository.select_user_by_email(email, password)
+    async def register_user(
+        self,
+        name: str,
+        email: str,
+        password: str,
+        db: AsyncSession,
+        face_image_bytes: bytes | None = None
+    ):
+        print("DEBUG: Начало регистрации пользователя")
+
+        # Проверка по email
+        existing_user = await self.user_repository.select_user_by_email(email)
         if existing_user:
-            raise HTTPException(status_code=400, detail="User already exists")
-        
-        user = await self.user_repository.create_user(name, email, password)
+            print("DEBUG: Email уже существует")
+            raise HTTPException(status_code=400, detail="Аккаунт с такой почтой уже существует")
+
+        print("DEBUG: Email не найден в базе данных")
+
+        face_encoding = None
+        if face_image_bytes:
+            print("DEBUG: Обработка изображения лица")
+
+            try:
+                image = face_recognition.load_image_file(BytesIO(face_image_bytes))
+                print("DEBUG: Изображение загружено")
+
+                encodings = face_recognition.face_encodings(image)
+                print(f"DEBUG: Найдено лиц: {len(encodings)}")
+
+                if not encodings:
+                    print("DEBUG: Лицо не найдено на изображении.")
+                    raise HTTPException(status_code=400, detail="Лицо не найдено на изображении.")
+
+                face_encoding_raw = np.asarray(encodings[0], dtype=np.float32)
+                print("DEBUG: Лицо успешно распознано")
+
+                # Получение всех закодированных лиц из БД
+                result = await db.execute(
+                    select(User.id, User.face_encoding).where(User.face_encoding.isnot(None))
+                )
+                all_users_with_face = result.fetchall()
+                print(f"DEBUG: Найдено {len(all_users_with_face)} пользователей с лицами")
+
+                for user_id, encoded_face_binary in all_users_with_face:
+                    try:
+                        known_encoding = pickle.loads(encoded_face_binary)
+                        known_encoding = np.asarray(known_encoding, dtype=np.float32)
+
+                        if known_encoding.shape != (128,) or face_encoding_raw.shape != (128,):
+                            print(f"DEBUG: Некорректная форма векторов: known={known_encoding.shape}, face={face_encoding_raw.shape}")
+                            continue
+
+                        match = face_recognition.compare_faces([known_encoding], face_encoding_raw, tolerance=0.6)[0]
+                        print(f"DEBUG: Сравнение лиц — результат: {match}")
+
+                        if match:
+                            print(f"DEBUG: Совпадение найдено с user_id: {user_id}")
+                            raise HTTPException(status_code=400, detail="Аккаунт с таким FaceID уже существует")
+
+                    except HTTPException as http_exc:
+                        raise http_exc  # Важно! Пробрасываем исключение — не продолжаем цикл
+                    except Exception as e:
+                        print(f"DEBUG: Ошибка при обработке одного из лиц: {e}")
+                        continue
+
+                # Если дошли сюда, значит лицо уникально
+                face_encoding = pickle.dumps(face_encoding_raw)
+                print("DEBUG: Face encoding сериализован для сохранения")
+
+            except HTTPException:
+                raise
+            except Exception as e:
+                print(f"DEBUG: Ошибка при обработке изображения: {e}")
+                raise HTTPException(status_code=400, detail="Ошибка обработки изображения лица.")
+
+        # Создание пользователя
+        print("DEBUG: Создание пользователя в базе данных")
+        user = await self.user_repository.create_user(name, email, password, face_encoding)
 
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = self.create_access_token(
             data={"email": user.email},
             expires_delta=access_token_expires
         )
+
+        print("DEBUG: Регистрация завершена успешно")
         return {"token": access_token, "token_type": "bearer", "role": "user"}
-    
-
-
-
 
     from jwt import decode, ExpiredSignatureError, InvalidTokenError
 
@@ -141,17 +259,9 @@ class UserRepository:
     def __init__(self, db_session: AsyncSession):
         self.db_session = db_session
 
-    async def select_user_by_email(self, email: str, password: str):
-        # Выполняем запрос на поиск пользователя по email
-        stmt = select(User).where(User.email == email)
-        result = await self.db_session.execute(stmt)
-        user = result.scalars().first()
-
-        # Если пользователь найден, проверяем пароль
-        if user and self.verify_password(password, user.password):
-            print(user)
-            return user
-        return None
+    async def select_user_by_email(self, email: str):
+        result = await self.db_session.execute(select(User).where(User.email == email))
+        return result.scalars().first()
     
     async def select_admin(self, email: str, password: str):
         result = await self.db_session.execute(
@@ -165,11 +275,23 @@ class UserRepository:
         )
         return result.scalars().first()
 
-
+    async def get_all_user_faces(self):
+        result = await self.db_session.execute(
+    text('SELECT "userId", face_encoding FROM user_faces')
+)
+        rows = result.fetchall()
+        return [{"user_id": row[0], "face_encoding": row[1]} for row in rows]
+    
+    async def select_user_by_id(self, user_id: int):
+        query = select(User).where(User.id == user_id)
+        result = await self.db_session.execute(query)
+        return result.scalar_one_or_none()
 
     def verify_password(self, plain_password: str, stored_password: str) -> bool:
         # Прямое сравнение пароля с сохраненным значением
         return plain_password == stored_password
+    
+
     
 
 
@@ -178,8 +300,8 @@ class UserRepository:
         result = await self.db_session.execute(stmt)
         return result.scalars().first()
     
-    async def create_user(self, name: str, email: str, password: str):
-        new_user = User(name=name, email=email, password=password)
+    async def create_user(self, name: str, email: str, password: str, face_encoding: bytes | None = None):
+        new_user = User(name=name, email=email, password=password, face_encoding=face_encoding)
         self.db_session.add(new_user)
         await self.db_session.commit()
         await self.db_session.refresh(new_user)

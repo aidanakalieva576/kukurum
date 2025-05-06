@@ -21,7 +21,8 @@ from fastapi import (
     logger,
 )
 from fastapi.responses import JSONResponse
-from jwt import PyJWTError
+from fastapi.staticfiles import StaticFiles
+from routes.audio import audio
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import null, or_, text, update
@@ -36,7 +37,7 @@ from auth_model import (
 )
 from pydantic import BaseModel
 from sqlalchemy.future import select
-from tables.models import (
+from models import (
     Appointment,
     Appointment_active,
     ChatMessage,
@@ -47,7 +48,7 @@ from tables.models import (
     engine,
 )
 from fastapi.middleware.cors import CORSMiddleware
-import tables.models as models
+import models as models
 from routes.schemas import (
     AddDoctorSchema,
     AppointmentCreate,
@@ -76,9 +77,11 @@ import io
 from gitignire.api import cloudinary, stripe
 from routes.ollama import ai
 from routes.adminroute import adminroute
+from faceID import face
 
 
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
 
@@ -172,11 +175,26 @@ async def login(user: UserLogin, auth_service: AuthService = Depends(get_auth_se
     return await auth_service.login_for_access_token(user.email, user.password)
 
 
-@router.post("/register")
+
+@app.post("/register")
 async def register(
-    user: UserRegister, auth_service: AuthService = Depends(get_auth_service)
+    name: str = Form(...),
+    email: str = Form(...),
+    password: str = Form(...),
+    file: UploadFile = File(None),
+    db: AsyncSession = Depends(get_db),
+    auth_service: AuthService = Depends(get_auth_service)
 ):
-    return await auth_service.register_user(user.name, user.email, user.password)
+    print("mdsklmskl")
+    face_bytes = await file.read() if file else None
+    return await auth_service.register_user(
+    name=name,
+    email=email,
+    password=password,
+    db=db,
+    face_image_bytes=face_bytes
+)
+
 
 
 @router.get("/me")
@@ -1062,4 +1080,6 @@ app.include_router(adminroute)
 app.include_router(docroute)
 app.include_router(chat)
 app.include_router(ai)
+app.include_router(audio)
+app.include_router(face)
 

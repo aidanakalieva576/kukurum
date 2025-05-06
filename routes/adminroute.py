@@ -9,7 +9,7 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from auth_model import get_db
-from tables.models import Appointment, Appointment_active, Doctor, User
+from models import Appointment, Appointment_active, Doctor, User
 from routes.schemas import DoctorAvailability
 
 
